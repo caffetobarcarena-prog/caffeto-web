@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8" />
+<title>Caffeto Cafeteria</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+<style>
+body {
+  margin:0;
+  font-family: Arial, sans-serif;
+  background:#fafafa;
+}
+header {
+  background:#2f1b0c;
+  color:white;
+  padding:20px;
+  text-align:center;
+}
+section {
+  padding:20px;
+}
+.card {
+  background:white;
+  padding:15px;
+  margin-bottom:15px;
+  border-radius:10px;
+}
+button {
+  background:#6b3e1d;
+  color:white;
+  border:none;
+  padding:10px 15px;
+  border-radius:6px;
+  cursor:pointer;
+}
+input {
+  width:100%;
+  padding:8px;
+  margin:5px 0;
+}
+footer {
+  text-align:center;
+  padding:20px;
+  background:#eee;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>☕ Caffeto</h1>
+<p>Peça, reserve e acompanhe eventos</p>
+</header>
+
+<section>
+<h2>📋 Cardápio</h2>
+<div id="menu"></div>
+</section>
+
+<section>
+<h2>🛒 Pedido</h2>
+<div id="cart"></div>
+<button onclick="sendWhats()">Finalizar no WhatsApp</button>
+</section>
+
+<section>
+<h2>📅 Eventos</h2>
+<div id="events"></div>
+</section>
+
+<section>
+<h2>🪑 Reservar Mesa</h2>
+<input id="rname" placeholder="Nome"/>
+<input id="rphone" placeholder="Telefone"/>
+<input id="rdate" type="datetime-local"/>
+<input id="rpeople" placeholder="Qtd pessoas"/>
+<button onclick="saveReservation()">Reservar</button>
+</section>
+
+<section>
+<h2>🎁 Fidelidade</h2>
+<input id="lname" placeholder="Nome"/>
+<input id="lemail" placeholder="Email"/>
+<input id="lphone" placeholder="Telefone"/>
+<button onclick="saveLoyalty()">Entrar no Clube</button>
+</section>
+
+<section>
+<h2>📍 Localização</h2>
+<button onclick="openMaps()">Abrir no Google Maps</button>
+</section>
+
+<footer>
+© Caffeto Cafeteria
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+/* ================= CONFIGURE AQUI ================= */
+
+const SUPABASE_URL = "COLE_SUA_URL_AQUI";
+const SUPABASE_KEY = "COLE_SUA_ANON_KEY_AQUI";
+
+const WHATSAPP_PHONE = "5591999999999";
+const MAPS_QUERY = "Caffeto Barcarena";
+
+/* ================================================ */
+
+const supabase = supabaseJs.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
+let cart = [];
+
+/* ---------- CARDÁPIO ---------- */
+
+async function loadMenu() {
+  const { data } = await supabase
+    .from("products")
+    .select("*")
+    .eq("available", true);
+
+  const el = document.getElementById("menu");
+  el.innerHTML = "";
+
+  data.forEach(p => {
+    el.innerHTML += `
+      <div class="card">
+        <strong>${p.name}</strong><br/>
+        R$ ${p.price}<br/>
+        <button onclick="addToCart('${p.name}', ${p.price})">
+          Adicionar
+        </button>
+      </div>
+    `;
+  });
+}
+
+/* ---------- EVENTOS ---------- */
+
+async function loadEvents() {
+  const { data } = await supabase
+    .from("events")
+    .select("*");
+
+  const el = document.getElementById("events");
+  el.innerHTML = "";
+
+  data.forEach(e => {
+    el.innerHTML += `
+      <div class="card">
+        <strong>${e.title}</strong><br/>
+        ${e.date}<br/>
+        ${e.description || ""}
+      </div>
+    `;
+  });
+}
+
+/* ---------- CARRINHO ---------- */
+
+function addToCart(name, price) {
+  cart.push({ name, price });
+  renderCart();
+}
+
+function renderCart() {
+  const el = document.getElementById("cart");
+  el.innerHTML = "";
+
+  let total = 0;
+
+  cart.forEach(i => {
+    total += Number(i.price);
+    el.innerHTML += `<div>${i.name} — R$ ${i.price}</div>`;
+  });
+
+  el.innerHTML += `<strong>Total: R$ ${total.toFixed(2)}</strong>`;
+}
+
+function sendWhats() {
+  if (!cart.length) return alert("Carrinho vazio");
+
+  let msg = "Olá Caffeto! Quero fazer o pedido:%0A";
+
+  cart.forEach(i => {
+    msg += `- ${i.name} (R$ ${i.price})%0A`;
+  });
+
+  const total = cart.reduce((s,i)=>s+Number(i.price),0);
+
+  msg += `%0ATotal: R$ ${total.toFixed(2)}`;
+
+  window.open(
+    `https://wa.me/${WHATSAPP_PHONE}?text=${msg}`
+  );
+}
+
+/* ---------- RESERVA ---------- */
+
+async function saveReservation() {
+  const { error } = await supabase
+    .from("reservations")
+    .insert({
+      name: rname.value,
+      phone: rphone.value,
+      date: rdate.value,
+      people: rpeople.value
+    });
+
+  alert(error ? "Erro!" : "Reserva enviada!");
+}
+
+/* ---------- FIDELIDADE ---------- */
+
+async function saveLoyalty() {
+  const { error } = await supabase
+    .from("loyalty")
+    .insert({
+      name: lname.value,
+      email: lemail.value,
+      phone: lphone.value
+    });
+
+  alert(error ? "Erro!" : "Cadastro feito!");
+}
+
+/* ---------- MAPS ---------- */
+
+function openMaps() {
+  window.open(
+    `https://maps.google.com?q=${encodeURIComponent(MAPS_QUERY)}`
+  );
+}
+
+/* ---------- INIT ---------- */
+
+loadMenu();
+loadEvents();
+</script>
+
+</body>
+</html>
