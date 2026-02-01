@@ -44,6 +44,10 @@ footer {
   padding:20px;
   background:#eee;
 }
+.debug {
+  color: red;
+  font-size: 14px;
+}
 </style>
 </head>
 
@@ -51,32 +55,19 @@ footer {
 
 <header>
 <h1>☕ Caffeto</h1>
-<p>Peça, reserve e acompanhe eventos</p>
+<p>Faça seu pedido online</p>
 </header>
 
 <section>
 <h2>📋 Cardápio</h2>
 <div id="menu"></div>
+<div id="menu-debug" class="debug"></div>
 </section>
 
 <section>
 <h2>🛒 Pedido</h2>
 <div id="cart"></div>
 <button onclick="sendWhats()">Finalizar no WhatsApp</button>
-</section>
-
-<section>
-<h2>📅 Eventos</h2>
-<div id="events"></div>
-</section>
-
-<section>
-<h2>🪑 Reservar Mesa</h2>
-<input id="rname" placeholder="Nome"/>
-<input id="rphone" placeholder="Telefone"/>
-<input id="rdate" type="datetime-local"/>
-<input id="rpeople" placeholder="Qtd pessoas"/>
-<button onclick="saveReservation()">Reservar</button>
 </section>
 
 <section>
@@ -100,7 +91,7 @@ footer {
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-/* ================= CONFIGURE AQUI ================= */
+/* ================= CONFIG ================= */
 
 const SUPABASE_URL = "https://dzyqcvvrdfgtukkkdeql.supabase.co";
 const SUPABASE_KEY = "sb_publishable_zbAzUkVerX8JoXq3p-xZZA_asSDpr6C";
@@ -108,7 +99,7 @@ const SUPABASE_KEY = "sb_publishable_zbAzUkVerX8JoXq3p-xZZA_asSDpr6C";
 const WHATSAPP_PHONE = "559193714865";
 const MAPS_QUERY = "Caffeto Barcarena";
 
-/* ================================================ */
+/* ======================================== */
 
 const supabaseClient = window.supabase.createClient(
   SUPABASE_URL,
@@ -120,53 +111,39 @@ let cart = [];
 /* ---------- CARDÁPIO ---------- */
 
 async function loadMenu() {
+  console.log("Carregando cardápio...");
+
   const { data, error } = await supabaseClient
     .from("products")
     .select("*")
     .eq("available", true);
 
   if (error) {
-    console.error(error);
+    console.error("Erro Supabase:", error);
+    document.getElementById("menu-debug").innerText =
+      "Erro ao carregar cardápio: " + error.message;
     return;
   }
 
+  console.log("Produtos:", data);
+
   const el = document.getElementById("menu");
   el.innerHTML = "";
+
+  if (!data || !data.length) {
+    document.getElementById("menu-debug").innerText =
+      "Nenhum item disponível no cardápio.";
+    return;
+  }
 
   data.forEach(p => {
     el.innerHTML += `
       <div class="card">
         <strong>${p.name}</strong><br/>
-        R$ ${p.price}<br/>
+        R$ ${Number(p.price).toFixed(2)}<br/>
         <button onclick="addToCart('${p.name}', ${p.price})">
           Adicionar
         </button>
-      </div>
-    `;
-  });
-}
-
-/* ---------- EVENTOS ---------- */
-
-async function loadEvents() {
-  const { data, error } = await supabaseClient
-    .from("events")
-    .select("*");
-
-  if (error) {
-    console.error(error);
-    return;
-  }
-
-  const el = document.getElementById("events");
-  el.innerHTML = "";
-
-  data.forEach(e => {
-    el.innerHTML += `
-      <div class="card">
-        <strong>${e.title}</strong><br/>
-        ${e.date}<br/>
-        ${e.description || ""}
       </div>
     `;
   });
@@ -211,21 +188,6 @@ function sendWhats() {
   );
 }
 
-/* ---------- RESERVA ---------- */
-
-async function saveReservation() {
-  const { error } = await supabaseClient
-    .from("reservations")
-    .insert({
-      name: rname.value,
-      phone: rphone.value,
-      date: rdate.value,
-      people: rpeople.value
-    });
-
-  alert(error ? "Erro!" : "Reserva enviada!");
-}
-
 /* ---------- FIDELIDADE ---------- */
 
 async function saveLoyalty() {
@@ -251,7 +213,6 @@ function openMaps() {
 /* ---------- INIT ---------- */
 
 loadMenu();
-loadEvents();
 </script>
 
 </body>
