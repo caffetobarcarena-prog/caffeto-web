@@ -96,7 +96,8 @@ footer {
 © Caffeto Cafeteria
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<!-- SUPABASE -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
 /* ================= CONFIGURE AQUI ================= */
@@ -104,12 +105,12 @@ footer {
 const SUPABASE_URL = "https://dzyqcvvrdfgtukkkdeql.supabase.co";
 const SUPABASE_KEY = "sb_publishable_zbAzUkVerX8JoXq3p-xZZA_asSDpr6C";
 
-const WHATSAPP_PHONE = "+559193714865";
+const WHATSAPP_PHONE = "559193714865";
 const MAPS_QUERY = "Caffeto Barcarena";
 
 /* ================================================ */
 
-const supabase = supabaseJs.createClient(
+const supabaseClient = window.supabase.createClient(
   SUPABASE_URL,
   SUPABASE_KEY
 );
@@ -119,10 +120,15 @@ let cart = [];
 /* ---------- CARDÁPIO ---------- */
 
 async function loadMenu() {
-  const { data } = await supabase
+  const { data, error } = await supabaseClient
     .from("products")
     .select("*")
     .eq("available", true);
+
+  if (error) {
+    console.error(error);
+    return;
+  }
 
   const el = document.getElementById("menu");
   el.innerHTML = "";
@@ -143,9 +149,14 @@ async function loadMenu() {
 /* ---------- EVENTOS ---------- */
 
 async function loadEvents() {
-  const { data } = await supabase
+  const { data, error } = await supabaseClient
     .from("events")
     .select("*");
+
+  if (error) {
+    console.error(error);
+    return;
+  }
 
   const el = document.getElementById("events");
   el.innerHTML = "";
@@ -203,7 +214,7 @@ function sendWhats() {
 /* ---------- RESERVA ---------- */
 
 async function saveReservation() {
-  const { error } = await supabase
+  const { error } = await supabaseClient
     .from("reservations")
     .insert({
       name: rname.value,
@@ -218,7 +229,7 @@ async function saveReservation() {
 /* ---------- FIDELIDADE ---------- */
 
 async function saveLoyalty() {
-  const { error } = await supabase
+  const { error } = await supabaseClient
     .from("loyalty")
     .insert({
       name: lname.value,
