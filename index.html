@@ -6,48 +6,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
 <style>
-body {
-  margin:0;
-  font-family: Arial, sans-serif;
-  background:#fafafa;
-}
-header {
-  background:#2f1b0c;
-  color:white;
-  padding:20px;
-  text-align:center;
-}
-section {
-  padding:20px;
-}
-.card {
-  background:white;
-  padding:15px;
-  margin-bottom:15px;
-  border-radius:10px;
-}
-button {
-  background:#6b3e1d;
-  color:white;
-  border:none;
-  padding:10px 15px;
-  border-radius:6px;
-  cursor:pointer;
-}
-input {
-  width:100%;
-  padding:8px;
-  margin:5px 0;
-}
-footer {
-  text-align:center;
-  padding:20px;
-  background:#eee;
-}
-.debug {
-  color: red;
-  font-size: 14px;
-}
+body { margin:0;font-family:Arial;background:#fafafa;}
+header{background:#2f1b0c;color:#fff;padding:20px;text-align:center;}
+section{padding:20px;}
+.card{background:#fff;padding:15px;margin-bottom:15px;border-radius:10px;}
+button{background:#6b3e1d;color:#fff;border:none;padding:10px 15px;border-radius:6px;}
+input{width:100%;padding:8px;margin:6px 0;}
+footer{text-align:center;padding:20px;background:#eee;}
+.debug{color:red;font-size:14px;}
 </style>
 </head>
 
@@ -55,7 +21,7 @@ footer {
 
 <header>
 <h1>☕ Caffeto</h1>
-<p>Faça seu pedido online</p>
+<p>Pedido online</p>
 </header>
 
 <section>
@@ -72,34 +38,27 @@ footer {
 
 <section>
 <h2>🎁 Fidelidade</h2>
-<input id="lname" placeholder="Nome"/>
-<input id="lemail" placeholder="Email"/>
-<input id="lphone" placeholder="Telefone"/>
-<button onclick="saveLoyalty()">Entrar no Clube</button>
+<input id="lname" placeholder="Nome">
+<input id="lemail" placeholder="Email">
+<input id="lphone" placeholder="Telefone">
+<button onclick="saveLoyalty()">Entrar</button>
 </section>
 
 <section>
 <h2>📍 Localização</h2>
-<button onclick="openMaps()">Abrir no Google Maps</button>
+<button onclick="openMaps()">Abrir no Maps</button>
 </section>
 
-<footer>
-© Caffeto Cafeteria
-</footer>
+<footer>© Caffeto</footer>
 
-<!-- SUPABASE -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-/* ================= CONFIG ================= */
-
 const SUPABASE_URL = "https://dzyqcvvrdfgtukkkdeql.supabase.co";
 const SUPABASE_KEY = "sb_publishable_zbAzUkVerX8JoXq3p-xZZA_asSDpr6C";
 
 const WHATSAPP_PHONE = "559193714865";
 const MAPS_QUERY = "Caffeto Barcarena";
-
-/* ======================================== */
 
 const supabaseClient = window.supabase.createClient(
   SUPABASE_URL,
@@ -108,40 +67,34 @@ const supabaseClient = window.supabase.createClient(
 
 let cart = [];
 
-/* ---------- CARDÁPIO ---------- */
+/* -------- CARDÁPIO -------- */
 
 async function loadMenu() {
-  console.log("Carregando cardápio...");
-
   const { data, error } = await supabaseClient
     .from("products")
-    .select("*")
-    .eq("available", true);
+    .select("*");
 
   if (error) {
-    console.error("Erro Supabase:", error);
     document.getElementById("menu-debug").innerText =
-      "Erro ao carregar cardápio: " + error.message;
+      "Erro: " + error.message;
     return;
   }
 
-  console.log("Produtos:", data);
+  if (!data.length) {
+    document.getElementById("menu-debug").innerText =
+      "Nenhum item cadastrado.";
+    return;
+  }
 
   const el = document.getElementById("menu");
   el.innerHTML = "";
 
-  if (!data || !data.length) {
-    document.getElementById("menu-debug").innerText =
-      "Nenhum item disponível no cardápio.";
-    return;
-  }
-
   data.forEach(p => {
     el.innerHTML += `
       <div class="card">
-        <strong>${p.name}</strong><br/>
-        R$ ${Number(p.price).toFixed(2)}<br/>
-        <button onclick="addToCart('${p.name}', ${p.price})">
+        <strong>${p.name}</strong><br>
+        R$ ${Number(p.price).toFixed(2)}<br>
+        <button onclick="addToCart('${p.name}',${p.price})">
           Adicionar
         </button>
       </div>
@@ -149,7 +102,7 @@ async function loadMenu() {
   });
 }
 
-/* ---------- CARRINHO ---------- */
+/* -------- CARRINHO -------- */
 
 function addToCart(name, price) {
   cart.push({ name, price });
@@ -159,7 +112,6 @@ function addToCart(name, price) {
 function renderCart() {
   const el = document.getElementById("cart");
   el.innerHTML = "";
-
   let total = 0;
 
   cart.forEach(i => {
@@ -173,22 +125,19 @@ function renderCart() {
 function sendWhats() {
   if (!cart.length) return alert("Carrinho vazio");
 
-  let msg = "Olá Caffeto! Quero fazer o pedido:%0A";
+  let msg = "Olá! Pedido:%0A";
 
   cart.forEach(i => {
     msg += `- ${i.name} (R$ ${i.price})%0A`;
   });
 
   const total = cart.reduce((s,i)=>s+Number(i.price),0);
-
   msg += `%0ATotal: R$ ${total.toFixed(2)}`;
 
-  window.open(
-    `https://wa.me/${WHATSAPP_PHONE}?text=${msg}`
-  );
+  window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${msg}`);
 }
 
-/* ---------- FIDELIDADE ---------- */
+/* -------- FIDELIDADE -------- */
 
 async function saveLoyalty() {
   const { error } = await supabaseClient
@@ -199,18 +148,16 @@ async function saveLoyalty() {
       phone: lphone.value
     });
 
-  alert(error ? "Erro!" : "Cadastro feito!");
+  alert(error ? error.message : "Cadastro feito!");
 }
 
-/* ---------- MAPS ---------- */
+/* -------- MAPS -------- */
 
 function openMaps() {
   window.open(
     `https://maps.google.com?q=${encodeURIComponent(MAPS_QUERY)}`
   );
 }
-
-/* ---------- INIT ---------- */
 
 loadMenu();
 </script>
