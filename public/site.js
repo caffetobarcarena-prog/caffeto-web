@@ -2,25 +2,30 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 // ================= CONFIG ====================
 
-const SUPABASE_URL = "SUA_URL_AQUI";
-const SUPABASE_KEY = "SUA_ANON_KEY_AQUI";
+const SUPABASE_URL = "SUA_URL";
+const SUPABASE_KEY = "SUA_ANON_KEY";
 
 const MAPS_QUERY = "Caffeto Barcarena";
+const WHATS_PHONE = "5591999999999";
 
 // =============================================
 
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ================= VARIÁVEIS =================
-
 let cart = [];
 let currentCustomer = null;
 
-// ================= EVENTOS ===================
+// ================= INIT =====================
 
-document.getElementById("registerBtn").onclick = registerCustomer;
-document.getElementById("checkoutBtn").onclick = finalizeOrder;
-document.getElementById("mapsBtn").onclick = openMaps;
+document.addEventListener("DOMContentLoaded", () => {
+
+  document.getElementById("registerBtn").onclick = registerCustomer;
+  document.getElementById("checkoutBtn").onclick = finalizeOrder;
+  document.getElementById("whatsBtn").onclick = sendWhats;
+  document.getElementById("mapsBtn").onclick = openMaps;
+
+  loadMenu();
+});
 
 // ================= CLIENTE ===================
 
@@ -31,14 +36,19 @@ async function registerCustomer() {
   const email = cemail.value.trim();
   const birthdate = cbirth.value;
 
-  // 1️⃣ procura cliente pelo telefone
+  if (!phone) {
+    alert("Informe telefone.");
+    return;
+  }
+
   const { data: existing } = await sb
     .from("customers")
     .select("*")
     .eq("phone", phone)
-    .single();
+    .maybeSingle();
 
   if (existing) {
+
     currentCustomer = existing;
 
     customerInfo.innerHTML =
@@ -47,10 +57,10 @@ async function registerCustomer() {
     pointsBox.innerHTML =
       `⭐ Pontos acumulados: ${existing.points}`;
 
+    alert("Cadastro reconhecido 👍");
     return;
   }
 
-  // 2️⃣ se não existe, cria
   const { data, error } = await sb
     .from("customers")
     .insert({
@@ -74,6 +84,8 @@ async function registerCustomer() {
 
   pointsBox.innerHTML =
     `⭐ Pontos acumulados: ${data.points}`;
+
+  alert("Cadastro realizado 🎉");
 }
 
 // ================= CARDÁPIO ==================
@@ -97,8 +109,8 @@ async function loadMenu() {
     el.innerHTML += `
       <div class="card">
         <strong>${p.name}</strong><br/>
-        R$ ${p.price}<br/>
-        <button onclick="addToCart('${p.name}', ${p.price})">
+        R$ ${Number(p.price).toFixed(2)}<br/>
+        <button onclick="window.addToCart('${p.name}', ${p.price})">
           Adicionar
         </button>
       </div>
@@ -133,7 +145,12 @@ function renderCart() {
 async function finalizeOrder() {
 
   if (!currentCustomer) {
-    alert("Faça cadastro antes de pedir.");
+    alert("Cadastre-se antes de pedir.");
+    return;
+  }
+
+  if (!cart.length) {
+    alert("Carrinho vazio.");
     return;
   }
 
@@ -152,16 +169,40 @@ async function finalizeOrder() {
     return;
   }
 
-  // atualiza pontos local
   currentCustomer.points += points;
 
   pointsBox.innerHTML =
     `⭐ Pontos acumulados: ${currentCustomer.points}`;
 
-  alert(`Pedido enviado! Você ganhou ${points} pontos 🎉`);
+  alert(`Pedido salvo! +${points} pontos`);
 
   cart = [];
   renderCart();
+}
+
+// ================= WHATSAPP ==================
+
+function sendWhats() {
+
+  if (!cart.length) {
+    alert("Carrinho vazio.");
+    return;
+  }
+
+  let msg = "Olá Caffeto! Quero pedir:%0A";
+
+  cart.forEach(i => {
+    msg += `- ${i.name} (R$ ${i.price})%0A`;
+  });
+
+  const total = cart.reduce((s,i)=>s+i.price,0);
+
+  msg += `%0ATotal: R$ ${total.toFixed(2)}`;
+
+  window.open(
+    `https://wa.me/${WHATS_PHONE}?text=${msg}`,
+    "_blank"
+  );
 }
 
 // ================= MAPS =====================
@@ -171,7 +212,3 @@ function openMaps() {
     `https://maps.google.com?q=${encodeURIComponent(MAPS_QUERY)}`
   );
 }
-
-// ================= INIT =====================
-
-loadMenu();
