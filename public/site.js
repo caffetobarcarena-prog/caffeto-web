@@ -4,8 +4,8 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 // ================= CONFIG ====================
 
-const SUPABASE_URL = "COLE_AQUI";
-const SUPABASE_KEY = "COLE_AQUI";
+const SUPABASE_URL = "https://dzyqcvvrdfgtukkkdeql.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6eXFjdnZyZGZndHVra2tkZXFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk5MDk5MTEsImV4cCI6MjA4NTQ4NTkxMX0.l_r4NHuJIcSomBf2_sAiUgb3ah6nzRLYF-UXv4uYcRE";
 
 const MAPS_QUERY = "Caffeto Barcarena";
 
