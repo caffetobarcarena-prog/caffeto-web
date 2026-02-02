@@ -20,8 +20,8 @@ let currentCustomer = null;
 document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("registerBtn").onclick = registerCustomer;
-  document.getElementById("checkoutBtn").onclick = finalizeOrder;
-  document.getElementById("whatsBtn").onclick = sendWhats;
+  document.getElementById("checkoutBtn").onclick = finalizeOrderAndWhats;
+  document.getElementById("whatsBtn").onclick = finalizeOrderAndWhats;
   document.getElementById("mapsBtn").onclick = openMaps;
 
   loadMenu();
@@ -140,9 +140,9 @@ function renderCart() {
   el.innerHTML += `<strong>Total: R$ ${total.toFixed(2)}</strong>`;
 }
 
-// ================= PEDIDO ====================
+// ================= PEDIDO + WHATS ====================
 
-async function finalizeOrder() {
+async function finalizeOrderAndWhats() {
 
   if (!currentCustomer) {
     alert("Cadastre-se antes de pedir.");
@@ -174,31 +174,20 @@ async function finalizeOrder() {
   pointsBox.innerHTML =
     `⭐ Pontos acumulados: ${currentCustomer.points}`;
 
-  alert(`Pedido salvo! +${points} pontos`);
-
-  cart = [];
-  renderCart();
-}
-
-// ================= WHATSAPP ==================
-
-function sendWhats() {
-
-  if (!cart.length) {
-    alert("Carrinho vazio.");
-    return;
-  }
-
-  let msg = "Olá Caffeto! Quero pedir:%0A";
+  // monta msg whatsapp
+  let msg = "Olá Caffeto! Quero fazer o pedido:%0A";
 
   cart.forEach(i => {
     msg += `- ${i.name} (R$ ${i.price})%0A`;
   });
 
-  const total = cart.reduce((s,i)=>s+i.price,0);
-
   msg += `%0ATotal: R$ ${total.toFixed(2)}`;
 
+  // limpa carrinho
+  cart = [];
+  renderCart();
+
+  // abre whatsapp
   window.open(
     `https://wa.me/${WHATS_PHONE}?text=${msg}`,
     "_blank"
