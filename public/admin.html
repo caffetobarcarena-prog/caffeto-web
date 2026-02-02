@@ -5,54 +5,39 @@
 <title>Caffeto Admin</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
-body{
-  font-family:Arial;
-  background:#fafafa;
-  padding:20px;
-}
-h1{color:#5a3318}
-section{
-  background:white;
-  padding:15px;
-  border-radius:10px;
-  margin-bottom:20px;
-}
-button{
-  background:#6b3e1d;
-  color:white;
-  border:none;
-  padding:8px 12px;
-  border-radius:6px;
-  cursor:pointer;
-}
-table{
-  width:100%;
-  border-collapse:collapse;
-}
-td,th{
-  border-bottom:1px solid #ddd;
-  padding:6px;
-  text-align:left;
-}
+body{font-family:Arial;background:#fafafa;padding:20px}
+section{background:white;padding:15px;border-radius:10px;margin-bottom:20px}
+input,button{padding:8px;margin:5px}
+button{background:#6b3e1d;color:white;border:none;border-radius:6px}
+.hidden{display:none}
 </style>
 </head>
 
 <body>
 
-<h1>☕ Caffeto — Administração</h1>
+<h1>☕ Caffeto Admin</h1>
 
-<section>
-<h2>📊 Relatórios</h2>
+<section id="loginBox">
+<h2>Login</h2>
+<input id="email" placeholder="Email">
+<input id="password" type="password" placeholder="Senha">
+<button onclick="login()">Entrar</button>
+</section>
 
-<button onclick="loadDaily()">Vendas Diárias</button>
-<button onclick="loadTop()">Ranking Clientes</button>
-<button onclick="exportCSV()">Exportar CSV</button>
+<section id="dashboard" class="hidden">
 
-<div id="reportBox"></div>
+<h2>📊 Dashboard</h2>
+<canvas id="chart"></canvas>
+
+<p id="metrics"></p>
+
+<button onclick="loadReports()">Atualizar</button>
+
 </section>
 
 <script type="module" src="admin.js"></script>
-
 </body>
 </html>
