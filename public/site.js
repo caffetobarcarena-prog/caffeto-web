@@ -1,220 +1,222 @@
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-/* ================= CONFIG ================= */
+const SUPABASE_URL = "import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
 const SUPABASE_URL = "https://dzyqcvvrdfgtukkkdeql.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6eXFjdnZyZGZndHVra2tkZXFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk5MDk5MTEsImV4cCI6MjA4NTQ4NTkxMX0.l_r4NHuJIcSomBf2_sAiUgb3ah6nzRLYF-UXv4uYcRE";
 
-const WHATSAPP_PHONE = "+5591993714865";
-const MAPS_QUERY = "Caffeto Barcarena";
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-/* ========================================= */
+let cart=[];
+let currentCustomer=null;
+
+const WHATSAPP_PHONE="5591999999999";
+const MAPS_QUERY="Caffeto Barcarena";
+
+document.getElementById("mapsBtn")
+ .onclick=()=>window.open(`https://maps.google.com?q=${encodeURIComponent(MAPS_QUERY)}`);
+
+document.getElementById("registerBtn")
+ .onclick=registerCustomer;
+
+document.getElementById("whatsBtn")
+ .onclick=finalizeOrderWhats;
+
+async function registerCustomer(){
+
+ const name=cname.value.trim();
+ const phone=cphone.value.trim();
+
+ if(!name||!phone) return alert("Nome e telefone");
+
+ const { data,error }=await supabase
+  .from("customers")
+  .upsert({ name,phone,email:cemail.value,birth:cbirth.value })
+  .select()
+  .single();
+
+ if(error) return alert(error.message);
+
+ currentCustomer=data;
+ customerInfo.innerHTML=`Olá ${data.name}`;
+ loadPoints();
+ loadMenu();
+}
+
+async function loadPoints(){
+ const { data }=await supabase
+  .from("customers")
+  .select("points")
+  .eq("id",currentCustomer.id)
+  .single();
+
+ pointsBox.innerText=`Pontos: ${data.points}`;
+}
+
+async function loadMenu(){
+ const { data,error }=await supabase
+  .from("products")
+  .select("*")
+  .eq("available",true);
+
+ if(error) return console.error(error);
+
+ menu.innerHTML="";
+ data.forEach(p=>{
+  menu.innerHTML+=`
+   <div class="card">
+    <strong>${p.name}</strong><br>
+    R$ ${p.price}
+    <button onclick="addToCart('${p.name}',${p.price})">Adicionar</button>
+   </div>`;
+ });
+}
+
+window.addToCart=(name,price)=>{
+ cart.push({name,price});
+ renderCart();
+};
+
+function renderCart(){
+ let total=0;
+ cart.forEach(i=>total+=i.price);
+
+ cartDiv=document.getElementById("cart");
+ cartDiv.innerHTML=cart.map(i=>`${i.name} - ${i.price}`).join("<br>");
+ cartDiv.innerHTML+=`<strong>Total: ${total}</strong>`;
+}
+
+async function finalizeOrderWhats(){
+
+ if(!currentCustomer||!cart.length) return alert("Cadastre-se e adicione itens");
+
+ const total=cart.reduce((s,i)=>s+i.price,0);
+
+ const { data,error }=await supabase
+  .from("orders")
+  .insert({ customer_id:currentCustomer.id,total,status:"pending" })
+  .select()
+  .single();
+
+ if(error) return alert("Erro pedido: "+error.message);
+
+ let msg="Olá Caffeto! Pedido:%0A";
+ cart.forEach(i=>msg+=`- ${i.name} (R$ ${i.price})%0A`);
+ msg+=`Total: R$ ${total.toFixed(2)}`;
+
+ window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${msg}`);
+
+ cart=[];
+ renderCart();
+}
+
+loadMenu();
+";
+const SUPABASE_KEY = "SUA_PUBLIC_KEY";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-/* ================= STATE ================= */
+let cart=[];
+let currentCustomer=null;
 
-let currentCustomer = null;
-let cart = [];
+const WHATSAPP_PHONE="+5591993714865";
+const MAPS_QUERY="Caffeto Barcarena";
 
-/* ================= ELEMENTS ================= */
+document.getElementById("mapsBtn")
+ .onclick=()=>window.open(`https://maps.google.com?q=${encodeURIComponent(MAPS_QUERY)}`);
 
-const menuEl = document.getElementById("menu");
-const cartEl = document.getElementById("cart");
-const whatsBtn = document.getElementById("whatsBtn");
-const mapsBtn = document.getElementById("mapsBtn");
-const pointsBox = document.getElementById("pointsBox");
+document.getElementById("registerBtn")
+ .onclick=registerCustomer;
 
-const registerBtn = document.getElementById("registerBtn");
-const customerInfo = document.getElementById("customerInfo");
+document.getElementById("whatsBtn")
+ .onclick=finalizeOrderWhats;
 
-const cname = document.getElementById("cname");
-const cphone = document.getElementById("cphone");
-const cemail = document.getElementById("cemail");
-const cbirth = document.getElementById("cbirth");
+async function registerCustomer(){
 
-/* ================= MAPS ================= */
+ const name=cname.value.trim();
+ const phone=cphone.value.trim();
 
-mapsBtn.onclick = () => {
-  window.open(
-    `https://maps.google.com?q=${encodeURIComponent(MAPS_QUERY)}`
-  );
-};
+ if(!name||!phone) return alert("Nome e telefone");
 
-/* ================= LOAD MENU ================= */
+ const { data,error }=await supabase
+  .from("customers")
+  .upsert({ name,phone,email:cemail.value,birth:cbirth.value })
+  .select()
+  .single();
 
-async function loadMenu() {
-  const { data, error } = await supabase
-    .from("products")
-    .select("*");
+ if(error) return alert(error.message);
 
-  if (error) {
-    alert("Erro ao carregar cardápio: " + error.message);
-    console.error(error);
-    return;
-  }
-
-  menuEl.innerHTML = "";
-
-  data.forEach(p => {
-    menuEl.innerHTML += `
-      <div class="card">
-        <strong>${p.name}</strong><br/>
-        R$ ${Number(p.price).toFixed(2)}<br/>
-        <button onclick="window.addToCart('${p.id}','${p.name}',${p.price})">
-          Adicionar
-        </button>
-      </div>
-    `;
-  });
+ currentCustomer=data;
+ customerInfo.innerHTML=`Olá ${data.name}`;
+ loadPoints();
+ loadMenu();
 }
 
-/* ================= CART ================= */
+async function loadPoints(){
+ const { data }=await supabase
+  .from("customers")
+  .select("points")
+  .eq("id",currentCustomer.id)
+  .single();
 
-window.addToCart = (id, name, price) => {
-  cart.push({ id, name, price });
-  renderCart();
-};
-
-function renderCart() {
-  cartEl.innerHTML = "";
-
-  let total = 0;
-
-  cart.forEach(i => {
-    total += Number(i.price);
-    cartEl.innerHTML += `<div>${i.name} — R$ ${i.price}</div>`;
-  });
-
-  cartEl.innerHTML += `<strong>Total: R$ ${total.toFixed(2)}</strong>`;
+ pointsBox.innerText=`Pontos: ${data.points}`;
 }
 
-/* ================= REGISTER / LOGIN ================= */
+async function loadMenu(){
+ const { data,error }=await supabase
+  .from("products")
+  .select("*")
+  .eq("available",true);
 
-registerBtn.onclick = async () => {
-  if (!cphone.value) {
-    alert("Informe telefone.");
-    return;
-  }
+ if(error) return console.error(error);
 
-  const { data: existing } = await supabase
-    .from("customers")
-    .select("*")
-    .eq("phone", cphone.value)
-    .maybeSingle();
-
-  if (existing) {
-    currentCustomer = existing;
-    showCustomer(existing);
-    return;
-  }
-
-  const { data, error } = await supabase
-    .from("customers")
-    .insert({
-      name: cname.value,
-      phone: cphone.value,
-      email: cemail.value,
-      birthdate: cbirth.value
-    })
-    .select()
-    .single();
-
-  if (error) {
-    alert("Erro cadastro: " + error.message);
-    return;
-  }
-
-  currentCustomer = data;
-  showCustomer(data);
-};
-
-function showCustomer(c) {
-  customerInfo.innerHTML = `✔ Logado como <b>${c.name}</b>`;
-  updatePoints();
+ menu.innerHTML="";
+ data.forEach(p=>{
+  menu.innerHTML+=`
+   <div class="card">
+    <strong>${p.name}</strong><br>
+    R$ ${p.price}
+    <button onclick="addToCart('${p.name}',${p.price})">Adicionar</button>
+   </div>`;
+ });
 }
 
-/* ================= POINTS ================= */
-
-async function updatePoints() {
-  const { data } = await supabase
-    .from("customers")
-    .select("points")
-    .eq("id", currentCustomer.id)
-    .single();
-
-  if (data) {
-    pointsBox.innerHTML = `
-      <strong>${data.points || 0}</strong> pontos
-      <br><small>Resgate a partir de 1000 pontos</small>
-    `;
-  }
-}
-
-/* ================= WHATS ORDER ================= */
-
-whatsBtn.onclick = async () => {
-  if (!currentCustomer) {
-    alert("Cadastre-se primeiro.");
-    return;
-  }
-
-  if (!cart.length) {
-    alert("Carrinho vazio.");
-    return;
-  }
-
-  let total = cart.reduce((s,i)=>s+Number(i.price),0);
-
-  const { error: orderError, data: order } = await supabase
-    .from("orders")
-    .insert({
-      customer_id: currentCustomer.id,
-      total,
-      status: "novo"
-    })
-    .select()
-    .single();
-
-  if (orderError) {
-    alert("Erro pedido: " + orderError.message);
-    return;
-  }
-
-  const items = cart.map(i => ({
-    order_id: order.id,
-    product_id: i.id,
-    price: i.price
-  }));
-
-  await supabase.from("order_items").insert(items);
-
-  const points = Math.floor(total / 2);
-
-  await supabase
-    .from("customers")
-    .update({
-      points: (currentCustomer.points || 0) + points
-    })
-    .eq("id", currentCustomer.id);
-
-  let msg = "Olá Caffeto! Quero fazer o pedido:%0A";
-
-  cart.forEach(i => {
-    msg += `- ${i.name} (R$ ${i.price})%0A`;
-  });
-
-  msg += `%0ATotal: R$ ${total.toFixed(2)}`;
-
-  window.open(
-    `https://wa.me/${WHATSAPP_PHONE}?text=${msg}`
-  );
-
-  cart = [];
-  renderCart();
-  updatePoints();
+window.addToCart=(name,price)=>{
+ cart.push({name,price});
+ renderCart();
 };
 
-/* ================= INIT ================= */
+function renderCart(){
+ let total=0;
+ cart.forEach(i=>total+=i.price);
+
+ cartDiv=document.getElementById("cart");
+ cartDiv.innerHTML=cart.map(i=>`${i.name} - ${i.price}`).join("<br>");
+ cartDiv.innerHTML+=`<strong>Total: ${total}</strong>`;
+}
+
+async function finalizeOrderWhats(){
+
+ if(!currentCustomer||!cart.length) return alert("Cadastre-se e adicione itens");
+
+ const total=cart.reduce((s,i)=>s+i.price,0);
+
+ const { data,error }=await supabase
+  .from("orders")
+  .insert({ customer_id:currentCustomer.id,total,status:"pending" })
+  .select()
+  .single();
+
+ if(error) return alert("Erro pedido: "+error.message);
+
+ let msg="Olá Caffeto! Pedido:%0A";
+ cart.forEach(i=>msg+=`- ${i.name} (R$ ${i.price})%0A`);
+ msg+=`Total: R$ ${total.toFixed(2)}`;
+
+ window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${msg}`);
+
+ cart=[];
+ renderCart();
+}
 
 loadMenu();
