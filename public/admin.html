@@ -6,43 +6,42 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-body { font-family: Arial; padding: 20px; background:#fafafa }
-input, button { display:block; margin:6px 0; padding:8px; }
-#panel { margin-top:20px; }
-.card { background:white;padding:10px;border-radius:8px;margin-bottom:6px }
+body { font-family: Arial; background:#fafafa; padding:20px;}
+input,button { padding:8px; margin:4px;}
+.card{background:white;padding:15px;border-radius:8px;margin:10px 0;}
 </style>
 </head>
 
 <body>
 
-<h2>☕ Admin Caffeto</h2>
+<h1>☕ Caffeto Admin</h1>
 
 <div id="loginBox">
   <input id="email" placeholder="Email">
-  <input id="pass" type="password" placeholder="Senha">
-  <button onclick="login()">Entrar</button>
+  <input id="password" type="password" placeholder="Senha">
+  <button id="loginBtn">Entrar</button>
 </div>
 
-<div id="panel" style="display:none">
+<div id="adminPanel" style="display:none">
 
-<h3>📋 Produtos</h3>
-<input id="pname" placeholder="Nome">
-<input id="pprice" placeholder="Preço">
-<button onclick="addProduct()">Salvar</button>
-<div id="plist"></div>
+<h2>⚙ Configurações</h2>
+<input id="whatsapp">
+<input id="maps">
+<input id="header">
+<input id="rate">
+<button id="saveSettings">Salvar</button>
 
-<h3>🎨 Configurações do Site</h3>
-<input id="key" placeholder="Chave (ex: subtitle)">
-<input id="value" placeholder="Valor">
-<button onclick="saveSetting()">Salvar</button>
+<h2>📋 Produtos</h2>
+<div id="products"></div>
 
-<h3>📊 Exportar Fidelidade</h3>
-<button onclick="exportCSV()">Baixar CSV</button>
+<h3>Novo Produto</h3>
+<input id="pname">
+<input id="pprice">
+<input type="file" id="pimage">
+<button id="addProduct">Adicionar</button>
 
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="admin.js"></script>
-
+<script type="module" src="admin.js"></script>
 </body>
 </html>
