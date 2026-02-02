@@ -7,10 +7,14 @@ const MAPS_QUERY = "Caffeto Barcarena";
 
 // ==========================================
 
-const supabase = supabaseJs.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
-);
+// protege variável global
+window.__supabase =
+  window.__supabase ||
+  supabaseJs.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const supabase = window.__supabase;
+
+// ================= VARIÁVEIS =================
 
 let cart = [];
 let currentCustomer = null;
@@ -130,8 +134,8 @@ async function finalizeOrder() {
   cart = [];
   renderCart();
 
-  // atualiza pontos
   currentCustomer.points += points;
+
   pointsBox.innerHTML =
     `⭐ Pontos acumulados: ${currentCustomer.points}`;
 }
