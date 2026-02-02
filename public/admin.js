@@ -5,66 +5,63 @@ const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSI
 
 const supabase=createClient(SUPABASE_URL,SUPABASE_KEY);
 
-const box=document.getElementById("reportBox");
+let session=null;
+let chart;
 
-window.loadDaily=async()=>{
+window.login=async()=>{
+
+ const { data,error }=await supabase.auth.signInWithPassword({
+  email:email.value,
+  password:password.value
+ });
+
+ if(error) return alert(error.message);
+
+ session=data.session;
+ loginBox.classList.add("hidden");
+ dashboard.classList.remove("hidden");
+
+ loadReports();
+};
+
+async function loadReports(){
+
  const { data,error }=await supabase
   .from("report_daily_sales")
   .select("*");
 
  if(error) return alert(error.message);
- render(data);
-};
 
-window.loadTop=async()=>{
- const { data,error }=await supabase
-  .from("report_top_customers")
-  .select("*");
+ renderChart(data);
 
- if(error) return alert(error.message);
- render(data);
-};
+ const dash=await supabase
+  .from("report_dashboard")
+  .select("*")
+  .single();
 
-window.exportCSV=async()=>{
- const { data,error }=await supabase
-  .from("orders")
-  .select("created_at,total,status,customers(name,phone)")
-  .eq("status","confirmed");
+ metrics.innerHTML=`
+ Total pedidos: ${dash.data.total_orders}<br>
+ Faturamento: R$ ${dash.data.revenue}<br>
+ Ticket médio: R$ ${dash.data.avg_ticket}
+ `;
+}
 
- if(error) return alert(error.message);
+function renderChart(rows){
 
- let csv="Data,Cliente,Telefone,Total\n";
+ const labels=rows.map(r=>r.day);
+ const values=rows.map(r=>r.revenue);
 
- data.forEach(o=>{
-  csv+=`${o.created_at},${o.customers.name},${o.customers.phone},${o.total}\n`;
+ if(chart) chart.destroy();
+
+ chart=new Chart(document.getElementById("chart"),{
+  type:"line",
+  data:{
+   labels,
+   datasets:[{
+     label:"Receita",
+     data:values,
+     borderColor:"#6b3e1d"
+   }]
+  }
  });
-
- const blob=new Blob([csv],{type:"text/csv"});
- const a=document.createElement("a");
- a.href=URL.createObjectURL(blob);
- a.download="caffeto-relatorio.csv";
- a.click();
-};
-
-function render(rows){
-
- if(!rows.length){
-  box.innerHTML="Sem dados";
-  return;
- }
-
- const cols=Object.keys(rows[0]);
-
- let html="<table><tr>";
- cols.forEach(c=>html+=`<th>${c}</th>`);
- html+="</tr>";
-
- rows.forEach(r=>{
-  html+="<tr>";
-  cols.forEach(c=>html+=`<td>${r[c]??""}</td>`);
-  html+="</tr>";
- });
-
- html+="</table>";
- box.innerHTML=html;
 }
