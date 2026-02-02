@@ -1,89 +1,70 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-const SUPABASE_URL = "https://dzyqcvvrdfgtukkkdeql.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6eXFjdnZyZGZndHVra2tkZXFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk5MDk5MTEsImV4cCI6MjA4NTQ4NTkxMX0.l_r4NHuJIcSomBf2_sAiUgb3ah6nzRLYF-UXv4uYcRE";
+const SUPABASE_URL="https://dzyqcvvrdfgtukkkdeql.supabase.co";
+const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6eXFjdnZyZGZndHVra2tkZXFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk5MDk5MTEsImV4cCI6MjA4NTQ4NTkxMX0.l_r4NHuJIcSomBf2_sAiUgb3ah6nzRLYF-UXv4uYcRE";
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabase=createClient(SUPABASE_URL,SUPABASE_KEY);
 
-const box = document.getElementById("reportBox");
+const box=document.getElementById("reportBox");
 
-window.loadDaily = async () => {
+window.loadDaily=async()=>{
+ const { data,error }=await supabase
+  .from("report_daily_sales")
+  .select("*");
 
-  const { data, error } = await supabase
-    .from("report_daily_sales")
-    .select("*");
-
-  if (error) {
-    alert(error.message);
-    return;
-  }
-
-  renderTable(data);
+ if(error) return alert(error.message);
+ render(data);
 };
 
-window.loadTop = async () => {
+window.loadTop=async()=>{
+ const { data,error }=await supabase
+  .from("report_top_customers")
+  .select("*");
 
-  const { data, error } = await supabase
-    .from("report_top_customers")
-    .select("*");
-
-  if (error) {
-    alert(error.message);
-    return;
-  }
-
-  renderTable(data);
+ if(error) return alert(error.message);
+ render(data);
 };
 
-window.exportCSV = async () => {
+window.exportCSV=async()=>{
+ const { data,error }=await supabase
+  .from("orders")
+  .select("created_at,total,status,customers(name,phone)")
+  .eq("status","confirmed");
 
-  const { data, error } = await supabase
-    .from("orders")
-    .select("created_at,total,status,customers(name,phone)")
-    .eq("status","confirmed");
+ if(error) return alert(error.message);
 
-  if (error) {
-    alert(error.message);
-    return;
-  }
+ let csv="Data,Cliente,Telefone,Total\n";
 
-  let csv = "Data,Cliente,Telefone,Total\n";
+ data.forEach(o=>{
+  csv+=`${o.created_at},${o.customers.name},${o.customers.phone},${o.total}\n`;
+ });
 
-  data.forEach(o=>{
-    csv+=`${o.created_at},${o.customers.name},${o.customers.phone},${o.total}\n`;
-  });
-
-  downloadCSV(csv,"caffeto-relatorio.csv");
+ const blob=new Blob([csv],{type:"text/csv"});
+ const a=document.createElement("a");
+ a.href=URL.createObjectURL(blob);
+ a.download="caffeto-relatorio.csv";
+ a.click();
 };
 
-function renderTable(rows){
+function render(rows){
 
-  if(!rows.length){
-    box.innerHTML="Sem dados";
-    return;
-  }
+ if(!rows.length){
+  box.innerHTML="Sem dados";
+  return;
+ }
 
-  const cols=Object.keys(rows[0]);
+ const cols=Object.keys(rows[0]);
 
-  let html="<table><tr>";
-  cols.forEach(c=>html+=`<th>${c}</th>`);
+ let html="<table><tr>";
+ cols.forEach(c=>html+=`<th>${c}</th>`);
+ html+="</tr>";
+
+ rows.forEach(r=>{
+  html+="<tr>";
+  cols.forEach(c=>html+=`<td>${r[c]??""}</td>`);
   html+="</tr>";
+ });
 
-  rows.forEach(r=>{
-    html+="<tr>";
-    cols.forEach(c=>html+=`<td>${r[c] ?? ""}</td>`);
-    html+="</tr>";
-  });
-
-  html+="</table>";
-
-  box.innerHTML=html;
-}
-
-function downloadCSV(content, filename){
-  const blob=new Blob([content],{type:"text/csv"});
-  const a=document.createElement("a");
-  a.href=URL.createObjectURL(blob);
-  a.download=filename;
-  a.click();
+ html+="</table>";
+ box.innerHTML=html;
 }
