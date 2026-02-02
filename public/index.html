@@ -54,34 +54,26 @@ footer {
 <p>Peça direto da cafeteria</p>
 </header>
 
-<!-- ================= CLIENTE ================= -->
-
 <section>
 <h2>👤 Cadastro</h2>
 <input id="cname" placeholder="Nome completo">
 <input id="cphone" placeholder="Telefone">
 <input id="cemail" placeholder="Email">
 <input id="cbirth" type="date">
-<button onclick="registerCustomer()">Cadastrar / Entrar</button>
+<button id="registerBtn">Cadastrar / Entrar</button>
 <div id="customerInfo"></div>
 </section>
-
-<!-- ================= CARDÁPIO ================= -->
 
 <section>
 <h2>📋 Cardápio</h2>
 <div id="menu"></div>
 </section>
 
-<!-- ================= PEDIDO ================= -->
-
 <section>
 <h2>🛒 Pedido</h2>
 <div id="cart"></div>
-<button onclick="finalizeOrder()">Finalizar Pedido</button>
+<button id="checkoutBtn">Finalizar Pedido</button>
 </section>
-
-<!-- ================= FIDELIDADE ================= -->
 
 <section>
 <h2>🎁 Fidelidade</h2>
@@ -89,19 +81,17 @@ footer {
 <p><small>Resgate a partir de 1000 pontos</small></p>
 </section>
 
-<!-- ================= LOCAL ================= -->
-
 <section>
 <h2>📍 Localização</h2>
-<button onclick="openMaps()">Abrir no Google Maps</button>
+<button id="mapsBtn">Abrir no Google Maps</button>
 </section>
 
 <footer>
 © Caffeto Cafeteria
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="site.js"></script>
+<!-- ⚠️ IMPORTANTE: AGORA É MODULE -->
+<script type="module" src="site.js"></script>
 
 </body>
 </html>
