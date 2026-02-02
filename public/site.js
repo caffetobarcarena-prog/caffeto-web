@@ -1,25 +1,30 @@
-// ================= CONFIG =================
+// ================= IMPORT SDK =================
+
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+// ================= CONFIG ====================
 
 const SUPABASE_URL = "COLE_AQUI";
 const SUPABASE_KEY = "COLE_AQUI";
 
 const MAPS_QUERY = "Caffeto Barcarena";
 
-// ==========================================
+// =============================================
 
-// protege variável global
-window.__supabase =
-  window.__supabase ||
-  supabaseJs.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-const supabase = window.__supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ================= VARIÁVEIS =================
 
 let cart = [];
 let currentCustomer = null;
 
-// ================= CLIENTE =================
+// ================= CLIENTE ===================
+
+document.getElementById("registerBtn").onclick = registerCustomer;
+document.getElementById("checkoutBtn").onclick = finalizeOrder;
+document.getElementById("mapsBtn").onclick = openMaps;
+
+// ================= FUNÇÕES ===================
 
 async function registerCustomer() {
 
@@ -28,7 +33,7 @@ async function registerCustomer() {
   const email = cemail.value;
   const birthdate = cbirth.value;
 
-  const { data, error } = await supabase
+  const { data, error } = await sb
     .from("customers")
     .upsert({
       name,
@@ -53,11 +58,11 @@ async function registerCustomer() {
     `⭐ Pontos acumulados: ${data.points}`;
 }
 
-// ================= CARDÁPIO =================
+// ================= CARDÁPIO ==================
 
 async function loadMenu() {
 
-  const { data, error } = await supabase
+  const { data, error } = await sb
     .from("products")
     .select("*")
     .eq("active", true);
@@ -83,12 +88,12 @@ async function loadMenu() {
   });
 }
 
-// ================= CARRINHO =================
+// ================= CARRINHO ==================
 
-function addToCart(name, price) {
+window.addToCart = function(name, price) {
   cart.push({ name, price });
   renderCart();
-}
+};
 
 function renderCart() {
 
@@ -105,7 +110,7 @@ function renderCart() {
   el.innerHTML += `<strong>Total: R$ ${total.toFixed(2)}</strong>`;
 }
 
-// ================= PEDIDO =================
+// ================= PEDIDO ====================
 
 async function finalizeOrder() {
 
@@ -117,7 +122,7 @@ async function finalizeOrder() {
   const total = cart.reduce((s,i)=>s+i.price,0);
   const points = Math.floor(total / 2);
 
-  const { error } = await supabase.from("orders").insert({
+  const { error } = await sb.from("orders").insert({
     customer_id: currentCustomer.id,
     items: cart,
     total,
@@ -140,7 +145,7 @@ async function finalizeOrder() {
     `⭐ Pontos acumulados: ${currentCustomer.points}`;
 }
 
-// ================= MAPS =================
+// ================= MAPS =====================
 
 function openMaps() {
   window.open(
@@ -148,6 +153,6 @@ function openMaps() {
   );
 }
 
-// ================= INIT =================
+// ================= INIT =====================
 
 loadMenu();
