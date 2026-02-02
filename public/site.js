@@ -1,73 +1,77 @@
-// ===============================
-// CONFIGURAÇÕES SUPABASE
-// ===============================
+// ================= CONFIG =================
 
 const SUPABASE_URL = "COLE_AQUI";
 const SUPABASE_KEY = "COLE_AQUI";
 
-const supabase = window.supabase.createClient(
+const MAPS_QUERY = "Caffeto Barcarena";
+
+// ==========================================
+
+const supabase = supabaseJs.createClient(
   SUPABASE_URL,
   SUPABASE_KEY
 );
 
 let cart = [];
-let WHATS = "";
-let MAPS = "";
+let currentCustomer = null;
 
-// ===============================
-// CARREGAR CONFIGURAÇÕES DO SITE
-// ===============================
+// ================= CLIENTE =================
 
-async function loadSettings() {
+async function registerCustomer() {
+
+  const name = cname.value;
+  const phone = cphone.value;
+  const email = cemail.value;
+  const birthdate = cbirth.value;
+
   const { data, error } = await supabase
-    .from("site_settings")
-    .select("*");
+    .from("customers")
+    .upsert({
+      name,
+      phone,
+      email,
+      birthdate
+    })
+    .select()
+    .single();
 
   if (error) {
-    console.error("Erro settings:", error);
+    alert("Erro cadastro: " + error.message);
     return;
   }
 
-  data.forEach(i => {
-    if (i.key === "header_title")
-      document.getElementById("headerTitle").innerText = i.value;
+  currentCustomer = data;
 
-    if (i.key === "subtitle")
-      document.getElementById("subtitle").innerText = i.value;
+  customerInfo.innerHTML =
+    `Olá ${data.name}<br>Pontos: ${data.points}`;
 
-    if (i.key === "primary_color")
-      document.documentElement.style.setProperty("--main", i.value);
-
-    if (i.key === "whatsapp") WHATS = i.value;
-    if (i.key === "maps_query") MAPS = i.value;
-  });
+  pointsBox.innerHTML =
+    `⭐ Pontos acumulados: ${data.points}`;
 }
 
-// ===============================
-// CARDÁPIO
-// ===============================
+// ================= CARDÁPIO =================
 
 async function loadMenu() {
+
   const { data, error } = await supabase
     .from("products")
     .select("*")
     .eq("active", true);
 
   if (error) {
-    console.error("Erro cardápio:", error);
+    alert("Erro cardápio: " + error.message);
     return;
   }
 
-  const menu = document.getElementById("menu");
-  menu.innerHTML = "";
+  const el = document.getElementById("menu");
+  el.innerHTML = "";
 
   data.forEach(p => {
-    menu.innerHTML += `
+    el.innerHTML += `
       <div class="card">
-        <b>${p.name}</b><br>
-        R$ ${Number(p.price).toFixed(2)}
-        <br>
-        <button onclick="addToCart('${p.name}',${p.price})">
+        <strong>${p.name}</strong><br/>
+        R$ ${p.price}<br/>
+        <button onclick="addToCart('${p.name}', ${p.price})">
           Adicionar
         </button>
       </div>
@@ -75,9 +79,7 @@ async function loadMenu() {
   });
 }
 
-// ===============================
-// CARRINHO
-// ===============================
+// ================= CARRINHO =================
 
 function addToCart(name, price) {
   cart.push({ name, price });
@@ -85,83 +87,63 @@ function addToCart(name, price) {
 }
 
 function renderCart() {
+
   const el = document.getElementById("cart");
   el.innerHTML = "";
 
   let total = 0;
+
   cart.forEach(i => {
-    total += i.price;
+    total += Number(i.price);
     el.innerHTML += `<div>${i.name} — R$ ${i.price}</div>`;
   });
 
   el.innerHTML += `<strong>Total: R$ ${total.toFixed(2)}</strong>`;
 }
 
-// ===============================
-// ENVIAR PEDIDO + REGISTRAR
-// ===============================
+// ================= PEDIDO =================
 
-async function sendWhats() {
-  if (!cart.length) {
-    alert("Carrinho vazio");
+async function finalizeOrder() {
+
+  if (!currentCustomer) {
+    alert("Faça cadastro antes de pedir.");
     return;
   }
 
-  const phoneInput = document.getElementById("lphone");
-  const phone = phoneInput ? phoneInput.value : "";
+  const total = cart.reduce((s,i)=>s+i.price,0);
+  const points = Math.floor(total / 2);
 
-  const total = cart.reduce((s, i) => s + i.price, 0);
-
-  // grava pedido
-  await supabase.from("orders").insert({
-    phone,
+  const { error } = await supabase.from("orders").insert({
+    customer_id: currentCustomer.id,
+    items: cart,
     total,
-    points_earned: Math.floor(total / 2)
-  });
-
-  let msg = "Pedido Caffeto:%0A";
-  cart.forEach(i => {
-    msg += `- ${i.name} (R$ ${i.price})%0A`;
-  });
-
-  msg += `%0ATotal: R$ ${total.toFixed(2)}`;
-
-  window.open(`https://wa.me/${WHATS}?text=${msg}`);
-}
-
-// ===============================
-// FIDELIDADE
-// ===============================
-
-async function saveLoyalty() {
-  const name = document.getElementById("lname").value;
-  const phone = document.getElementById("lphone").value;
-  const email = document.getElementById("lemail").value;
-
-  const { error } = await supabase.from("loyalty").upsert({
-    phone,
-    name,
-    email
+    points_earned: points
   });
 
   if (error) {
-    alert(error.message);
-  } else {
-    alert("Cadastro realizado!");
+    alert("Erro pedido: " + error.message);
+    return;
   }
+
+  alert(`Pedido enviado! Você ganhou ${points} pontos`);
+
+  cart = [];
+  renderCart();
+
+  // atualiza pontos
+  currentCustomer.points += points;
+  pointsBox.innerHTML =
+    `⭐ Pontos acumulados: ${currentCustomer.points}`;
 }
 
-// ===============================
-// MAPS
-// ===============================
+// ================= MAPS =================
 
 function openMaps() {
-  window.open(`https://maps.google.com?q=${MAPS}`);
+  window.open(
+    `https://maps.google.com?q=${encodeURIComponent(MAPS_QUERY)}`
+  );
 }
 
-// ===============================
-// INIT
-// ===============================
+// ================= INIT =================
 
-loadSettings();
 loadMenu();
