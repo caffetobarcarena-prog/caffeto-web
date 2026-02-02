@@ -19,10 +19,14 @@ let currentCustomer = null;
 
 document.addEventListener("DOMContentLoaded", () => {
 
-  document.getElementById("registerBtn").onclick = registerCustomer;
-  document.getElementById("checkoutBtn").onclick = finalizeOrderAndWhats;
-  document.getElementById("whatsBtn").onclick = finalizeOrderAndWhats;
-  document.getElementById("mapsBtn").onclick = openMaps;
+  const whatsBtn = document.getElementById("whatsBtn");
+  if (whatsBtn) whatsBtn.onclick = finalizeOrderAndWhats;
+
+  const mapsBtn = document.getElementById("mapsBtn");
+  if (mapsBtn) mapsBtn.onclick = openMaps;
+
+  const registerBtn = document.getElementById("registerBtn");
+  if (registerBtn) registerBtn.onclick = registerCustomer;
 
   loadMenu();
 });
@@ -110,7 +114,7 @@ async function loadMenu() {
       <div class="card">
         <strong>${p.name}</strong><br/>
         R$ ${Number(p.price).toFixed(2)}<br/>
-        <button onclick="window.addToCart('${p.name}', ${p.price})">
+        <button onclick="addToCart('${p.name}', ${p.price})">
           Adicionar
         </button>
       </div>
@@ -174,7 +178,6 @@ async function finalizeOrderAndWhats() {
   pointsBox.innerHTML =
     `⭐ Pontos acumulados: ${currentCustomer.points}`;
 
-  // monta msg whatsapp
   let msg = "Olá Caffeto! Quero fazer o pedido:%0A";
 
   cart.forEach(i => {
@@ -183,11 +186,9 @@ async function finalizeOrderAndWhats() {
 
   msg += `%0ATotal: R$ ${total.toFixed(2)}`;
 
-  // limpa carrinho
   cart = [];
   renderCart();
 
-  // abre whatsapp
   window.open(
     `https://wa.me/${WHATS_PHONE}?text=${msg}`,
     "_blank"
