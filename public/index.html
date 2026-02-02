@@ -1,47 +1,17 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<meta charset="UTF-8" />
-<title>Caffeto Cafeteria</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="UTF-8">
+<title>Caffeto</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
 
 <style>
-body {
-  margin:0;
-  font-family: Arial, sans-serif;
-  background:#fafafa;
-}
-header {
-  background:#2f1b0c;
-  color:white;
-  padding:20px;
-  text-align:center;
-}
-section { padding:20px; }
-.card {
-  background:white;
-  padding:15px;
-  margin-bottom:15px;
-  border-radius:10px;
-}
-button {
-  background:#6b3e1d;
-  color:white;
-  border:none;
-  padding:10px 15px;
-  border-radius:6px;
-  cursor:pointer;
-}
-input {
-  width:100%;
-  padding:8px;
-  margin:5px 0;
-}
-footer {
-  text-align:center;
-  padding:20px;
-  background:#eee;
-}
+body{margin:0;font-family:Arial;background:#fafafa}
+header{background:#2f1b0c;color:white;padding:20px;text-align:center}
+section{padding:20px}
+.card{background:white;padding:15px;margin-bottom:15px;border-radius:10px}
+button{background:#6b3e1d;color:white;border:none;padding:10px 15px;border-radius:6px}
+input{width:100%;padding:8px;margin:5px 0}
 </style>
 </head>
 
@@ -54,7 +24,7 @@ footer {
 
 <section>
 <h2>👤 Cadastro</h2>
-<input id="cname" placeholder="Nome completo">
+<input id="cname" placeholder="Nome">
 <input id="cphone" placeholder="Telefone">
 <input id="cemail" placeholder="Email">
 <input id="cbirth" type="date">
@@ -70,14 +40,12 @@ footer {
 <section>
 <h2>🛒 Pedido</h2>
 <div id="cart"></div>
-<button id="whatsBtn">
-  Finalizar pedido pelo WhatsApp
-</button>
+<button id="whatsBtn">Enviar pelo WhatsApp</button>
 </section>
 
 <section>
 <h2>🎁 Fidelidade</h2>
-<div id="pointsBox">Cadastre-se para ver seus pontos.</div>
+<div id="pointsBox"></div>
 <p><small>Resgate a partir de 1000 pontos</small></p>
 </section>
 
@@ -85,10 +53,6 @@ footer {
 <h2>📍 Localização</h2>
 <button id="mapsBtn">Abrir no Google Maps</button>
 </section>
-
-<footer>
-© Caffeto Cafeteria
-</footer>
 
 <script type="module" src="site.js"></script>
 </body>
