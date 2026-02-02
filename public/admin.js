@@ -1,97 +1,104 @@
-/* ================= ADMIN PANEL CAFFETO ================= */
+import { createClient } from
+"https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
-const SUPABASE_URL = "COLE_SUA_URL";
-const SUPABASE_KEY = "COLE_SUA_ANON_KEY";
+const SUPABASE_URL = "https://SEU-PROJETO.supabase.co";
+const SUPABASE_KEY = "SUA_ANON_KEY";
 
-const supabase = window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
-);
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-/* ---------- LOGIN ---------- */
+const loginBox = document.getElementById("loginBox");
+const panel = document.getElementById("adminPanel");
 
-async function loginAdmin() {
-  const email = document.getElementById("adminEmail").value;
-  const password = document.getElementById("adminPassword").value;
+const email = document.getElementById("email");
+const password = document.getElementById("password");
+const loginBtn = document.getElementById("loginBtn");
 
+loginBtn.onclick = async () => {
   const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password
+    email: email.value,
+    password: password.value
   });
 
-  if (error) {
-    alert("Erro: " + error.message);
-  } else {
-    document.getElementById("loginBox").style.display = "none";
-    document.getElementById("adminPanel").style.display = "block";
-    loadProducts();
-    loadLoyalty();
-  }
-}
+  if (error) return alert(error.message);
 
-/* ---------- PRODUTOS ---------- */
+  await checkAdmin();
+};
 
-async function loadProducts() {
-  const { data } = await supabase.from("products").select("*");
+async function checkAdmin() {
+  const { data } = await supabase
+    .from("admins")
+    .select("*")
+    .eq("user_id",(await supabase.auth.getUser()).data.user.id)
+    .maybeSingle();
 
-  const list = document.getElementById("productsList");
-  list.innerHTML = "";
+  if (!data) return alert("Sem permissão.");
 
-  data.forEach(p => {
-    list.innerHTML += `
-      <div>
-        ${p.name} - R$ ${p.price}
-        <button onclick="deleteProduct('${p.id}')">Excluir</button>
-      </div>
-    `;
-  });
-}
+  loginBox.style.display="none";
+  panel.style.display="block";
 
-async function addProduct() {
-  const name = document.getElementById("pname").value;
-  const price = document.getElementById("pprice").value;
-
-  await supabase.from("products").insert({
-    name,
-    price
-  });
-
+  loadSettings();
   loadProducts();
 }
 
-/* ---------- FIDELIDADE ---------- */
+/* SETTINGS */
 
-async function loadLoyalty() {
-  const { data } = await supabase.from("loyalty").select("*");
-
-  const list = document.getElementById("loyaltyList");
-  list.innerHTML = "";
-
-  data.forEach(l => {
-    list.innerHTML += `
-      <div>
-        ${l.name} - ${l.phone} - ${l.points || 0} pts
-      </div>
-    `;
-  });
+async function loadSettings(){
+  const { data } = await supabase.from("settings").select("*").single();
+  whatsapp.value=data.whatsapp;
+  maps.value=data.maps_query;
+  header.value=data.header_text;
+  rate.value=data.point_rate;
 }
 
-/* ---------- EXPORTAR ---------- */
+saveSettings.onclick=async()=>{
+ await supabase.from("settings").update({
+  whatsapp:whatsapp.value,
+  maps_query:maps.value,
+  header_text:header.value,
+  point_rate:rate.value
+ }).neq("id","0");
+};
 
-async function exportLoyaltyCSV() {
-  const { data } = await supabase.from("loyalty").select("*");
+/* PRODUCTS */
 
-  let csv = "Nome,Telefone,Email,Pontos\n";
-
-  data.forEach(l => {
-    csv += `${l.name},${l.phone},${l.email},${l.points}\n`;
-  });
-
-  const blob = new Blob([csv], { type: "text/csv" });
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "fidelidade.csv";
-  a.click();
+async function loadProducts(){
+ const { data } = await supabase.from("products").select("*");
+ products.innerHTML="";
+ data.forEach(p=>{
+  products.innerHTML+=`
+   <div class="card">
+    ${p.name} - ${p.price}
+    <button onclick="window.toggle('${p.id}',${p.available})">
+     ${p.available?'Desativar':'Ativar'}
+    </button>
+   </div>`;
+ });
 }
+
+window.toggle=async(id,val)=>{
+ await supabase.from("products")
+ .update({available:!val})
+ .eq("id",id);
+ loadProducts();
+};
+
+addProduct.onclick=async()=>{
+ const file=pimage.files[0];
+ let img=null;
+
+ if(file){
+  const { data } = await supabase.storage
+   .from("products")
+   .upload(Date.now()+"-"+file.name,file);
+  img=data.path;
+ }
+
+ await supabase.from("products").insert({
+  name:pname.value,
+  price:pprice.value,
+  image:img,
+  available:true
+ });
+
+ loadProducts();
+};
