@@ -80,4 +80,88 @@ async function loadMenu() {
 // ===============================
 
 function addToCart(name, price) {
-  cart
+  cart.push({ name, price });
+  renderCart();
+}
+
+function renderCart() {
+  const el = document.getElementById("cart");
+  el.innerHTML = "";
+
+  let total = 0;
+  cart.forEach(i => {
+    total += i.price;
+    el.innerHTML += `<div>${i.name} — R$ ${i.price}</div>`;
+  });
+
+  el.innerHTML += `<strong>Total: R$ ${total.toFixed(2)}</strong>`;
+}
+
+// ===============================
+// ENVIAR PEDIDO + REGISTRAR
+// ===============================
+
+async function sendWhats() {
+  if (!cart.length) {
+    alert("Carrinho vazio");
+    return;
+  }
+
+  const phoneInput = document.getElementById("lphone");
+  const phone = phoneInput ? phoneInput.value : "";
+
+  const total = cart.reduce((s, i) => s + i.price, 0);
+
+  // grava pedido
+  await supabase.from("orders").insert({
+    phone,
+    total,
+    points_earned: Math.floor(total / 2)
+  });
+
+  let msg = "Pedido Caffeto:%0A";
+  cart.forEach(i => {
+    msg += `- ${i.name} (R$ ${i.price})%0A`;
+  });
+
+  msg += `%0ATotal: R$ ${total.toFixed(2)}`;
+
+  window.open(`https://wa.me/${WHATS}?text=${msg}`);
+}
+
+// ===============================
+// FIDELIDADE
+// ===============================
+
+async function saveLoyalty() {
+  const name = document.getElementById("lname").value;
+  const phone = document.getElementById("lphone").value;
+  const email = document.getElementById("lemail").value;
+
+  const { error } = await supabase.from("loyalty").upsert({
+    phone,
+    name,
+    email
+  });
+
+  if (error) {
+    alert(error.message);
+  } else {
+    alert("Cadastro realizado!");
+  }
+}
+
+// ===============================
+// MAPS
+// ===============================
+
+function openMaps() {
+  window.open(`https://maps.google.com?q=${MAPS}`);
+}
+
+// ===============================
+// INIT
+// ===============================
+
+loadSettings();
+loadMenu();
