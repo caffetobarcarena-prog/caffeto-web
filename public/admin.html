@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Admin Caffeto</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body { font-family: Arial; padding: 20px; background:#fafafa }
+input, button { display:block; margin:6px 0; padding:8px; }
+#panel { margin-top:20px; }
+.card { background:white;padding:10px;border-radius:8px;margin-bottom:6px }
+</style>
+</head>
+
+<body>
+
+<h2>☕ Admin Caffeto</h2>
+
+<div id="loginBox">
+  <input id="email" placeholder="Email">
+  <input id="pass" type="password" placeholder="Senha">
+  <button onclick="login()">Entrar</button>
+</div>
+
+<div id="panel" style="display:none">
+
+<h3>📋 Produtos</h3>
+<input id="pname" placeholder="Nome">
+<input id="pprice" placeholder="Preço">
+<button onclick="addProduct()">Salvar</button>
+<div id="plist"></div>
+
+<h3>🎨 Configurações do Site</h3>
+<input id="key" placeholder="Chave (ex: subtitle)">
+<input id="value" placeholder="Valor">
+<button onclick="saveSetting()">Salvar</button>
+
+<h3>📊 Exportar Fidelidade</h3>
+<button onclick="exportCSV()">Baixar CSV</button>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="admin.js"></script>
+
+</body>
+</html>
