@@ -1,11 +1,9 @@
-// ================= IMPORT SDK =================
-
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
 // ================= CONFIG ====================
 
-const SUPABASE_URL = "https://dzyqcvvrdfgtukkkdeql.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6eXFjdnZyZGZndHVra2tkZXFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk5MDk5MTEsImV4cCI6MjA4NTQ4NTkxMX0.l_r4NHuJIcSomBf2_sAiUgb3ah6nzRLYF-UXv4uYcRE";
+const SUPABASE_URL = "SUA_URL_AQUI";
+const SUPABASE_KEY = "SUA_ANON_KEY_AQUI";
 
 const MAPS_QUERY = "Caffeto Barcarena";
 
@@ -18,24 +16,44 @@ const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 let cart = [];
 let currentCustomer = null;
 
-// ================= CLIENTE ===================
+// ================= EVENTOS ===================
 
 document.getElementById("registerBtn").onclick = registerCustomer;
 document.getElementById("checkoutBtn").onclick = finalizeOrder;
 document.getElementById("mapsBtn").onclick = openMaps;
 
-// ================= FUNÇÕES ===================
+// ================= CLIENTE ===================
 
 async function registerCustomer() {
 
-  const name = cname.value;
-  const phone = cphone.value;
-  const email = cemail.value;
+  const name = cname.value.trim();
+  const phone = cphone.value.trim();
+  const email = cemail.value.trim();
   const birthdate = cbirth.value;
 
+  // 1️⃣ procura cliente pelo telefone
+  const { data: existing } = await sb
+    .from("customers")
+    .select("*")
+    .eq("phone", phone)
+    .single();
+
+  if (existing) {
+    currentCustomer = existing;
+
+    customerInfo.innerHTML =
+      `Olá ${existing.name}<br>Pontos: ${existing.points}`;
+
+    pointsBox.innerHTML =
+      `⭐ Pontos acumulados: ${existing.points}`;
+
+    return;
+  }
+
+  // 2️⃣ se não existe, cria
   const { data, error } = await sb
     .from("customers")
-    .upsert({
+    .insert({
       name,
       phone,
       email,
@@ -134,15 +152,16 @@ async function finalizeOrder() {
     return;
   }
 
-  alert(`Pedido enviado! Você ganhou ${points} pontos`);
-
-  cart = [];
-  renderCart();
-
+  // atualiza pontos local
   currentCustomer.points += points;
 
   pointsBox.innerHTML =
     `⭐ Pontos acumulados: ${currentCustomer.points}`;
+
+  alert(`Pedido enviado! Você ganhou ${points} pontos 🎉`);
+
+  cart = [];
+  renderCart();
 }
 
 // ================= MAPS =====================
