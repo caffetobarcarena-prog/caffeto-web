@@ -2,46 +2,57 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Admin Caffeto</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Caffeto Admin</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
 
 <style>
-body { font-family: Arial; background:#fafafa; padding:20px;}
-input,button { padding:8px; margin:4px;}
-.card{background:white;padding:15px;border-radius:8px;margin:10px 0;}
+body{
+  font-family:Arial;
+  background:#fafafa;
+  padding:20px;
+}
+h1{color:#5a3318}
+section{
+  background:white;
+  padding:15px;
+  border-radius:10px;
+  margin-bottom:20px;
+}
+button{
+  background:#6b3e1d;
+  color:white;
+  border:none;
+  padding:8px 12px;
+  border-radius:6px;
+  cursor:pointer;
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+td,th{
+  border-bottom:1px solid #ddd;
+  padding:6px;
+  text-align:left;
+}
 </style>
 </head>
 
 <body>
 
-<h1>☕ Caffeto Admin</h1>
+<h1>☕ Caffeto — Administração</h1>
 
-<div id="loginBox">
-  <input id="email" placeholder="Email">
-  <input id="password" type="password" placeholder="Senha">
-  <button id="loginBtn">Entrar</button>
-</div>
+<section>
+<h2>📊 Relatórios</h2>
 
-<div id="adminPanel" style="display:none">
+<button onclick="loadDaily()">Vendas Diárias</button>
+<button onclick="loadTop()">Ranking Clientes</button>
+<button onclick="exportCSV()">Exportar CSV</button>
 
-<h2>⚙ Configurações</h2>
-<input id="whatsapp">
-<input id="maps">
-<input id="header">
-<input id="rate">
-<button id="saveSettings">Salvar</button>
-
-<h2>📋 Produtos</h2>
-<div id="products"></div>
-
-<h3>Novo Produto</h3>
-<input id="pname">
-<input id="pprice">
-<input type="file" id="pimage">
-<button id="addProduct">Adicionar</button>
-
-</div>
+<div id="reportBox"></div>
+</section>
 
 <script type="module" src="admin.js"></script>
+
 </body>
 </html>
