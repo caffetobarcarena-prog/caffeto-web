@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <title>Caffeto • Admin</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 
 <style>
 
 body {
   margin:0;
-  font-family: Arial, sans-serif;
+  font-family:Arial, sans-serif;
   background:#fafafa;
 }
 
@@ -23,12 +23,10 @@ body {
   border-radius:12px;
 }
 
-h2 { margin-top:0 }
-
-input, button {
+input,button {
   width:100%;
   padding:10px;
-  margin-top:8px;
+  margin-top:10px;
 }
 
 button {
@@ -36,15 +34,12 @@ button {
   color:white;
   border:none;
   border-radius:6px;
-  cursor:pointer;
 }
 
 .preview {
-  margin-top:10px;
   max-height:120px;
+  margin-top:10px;
 }
-
-hr { margin:20px 0 }
 
 </style>
 </head>
@@ -53,52 +48,41 @@ hr { margin:20px 0 }
 
 <div class="container">
 
-<!-- ================= LOGIN ================= -->
-
+<!-- LOGIN -->
 <div id="loginBox">
 
-  <h2>Login Admin</h2>
+<h2>Login Admin</h2>
 
-  <input id="email" placeholder="Email">
-  <input id="password" type="password" placeholder="Senha">
+<input id="email" placeholder="Email">
+<input id="password" type="password" placeholder="Senha">
 
-  <button id="loginBtn">Entrar</button>
+<button id="loginBtn">Entrar</button>
 
 </div>
 
-<!-- ================= PAINEL ================= -->
-
+<!-- ADMIN -->
 <div id="adminPanel" class="hidden">
 
-  <h2>Painel Administrativo</h2>
+<h2>Painel Administrativo</h2>
 
-  <!-- COR -->
+<h3>🎨 Cor Principal</h3>
+<input type="color" id="mainColor">
+<button id="saveColorBtn">Salvar Cor</button>
 
-  <h3>🎨 Cor Principal</h3>
+<hr>
 
-  <input type="color" id="mainColor">
-  <button id="saveColorBtn">Salvar Cor</button>
+<h3>🖼️ Logo</h3>
+<input type="file" id="logoFile" accept="image/*">
+<img id="logoPreview" class="preview">
+<button id="saveLogoBtn">Salvar Logo</button>
 
-  <hr>
+<hr>
 
-  <!-- LOGO -->
-
-  <h3>🖼️ Logo</h3>
-
-  <input type="file" id="logoFile" accept="image/*">
-  <img id="logoPreview" class="preview">
-
-  <button id="saveLogoBtn">Salvar Logo</button>
-
-  <hr>
-
-  <button id="logoutBtn">Sair</button>
+<button id="logoutBtn">Sair</button>
 
 </div>
 
 </div>
-
-<!-- ================= SCRIPT ================= -->
 
 <script type="module">
 
@@ -108,13 +92,13 @@ import { createClient } from
 /* ========= CONFIG ========= */
 
 const SUPABASE_URL = "https://dzyqcvvrdfgtukkkdeql.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6eXFjdnZyZGZndHVra2tkZXFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk5MDk5MTEsImV4cCI6MjA4NTQ4NTkxMX0.l_r4NHuJIcSomBf2_sAiUgb3ah6nzRLYF-UXv4uYcRE  ";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6eXFjdnZyZGZndHVra2tkZXFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk5MDk5MTEsImV4cCI6MjA4NTQ4NTkxMX0.l_r4NHuJIcSomBf2_sAiUgb3ah6nzRLYF-UXv4uYcRE";
 
-/* ========================== */
+/* ========================= */
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-/* ELEMENTOS */
+/* DOM */
 
 const loginBox = document.getElementById("loginBox");
 const adminPanel = document.getElementById("adminPanel");
@@ -134,17 +118,23 @@ const saveLogoBtn = document.getElementById("saveLogoBtn");
 
 /* ================= INIT ================= */
 
-(async () => {
+console.log("ADMIN SCRIPT CARREGOU");
 
-  const { data } = await supabase.auth.getSession();
+async function init() {
 
-  if (data.session) {
+  const { data, error } = await supabase.auth.getSession();
+
+  console.log("SESSION:", data);
+
+  if (data?.session) {
     showAdmin();
   } else {
     loginBox.classList.remove("hidden");
+    adminPanel.classList.add("hidden");
   }
+}
 
-})();
+init();
 
 /* ================= LOGIN ================= */
 
@@ -155,7 +145,11 @@ loginBtn.onclick = async () => {
     password: password.value
   });
 
-  if (error) return alert(error.message);
+  if (error) {
+    console.error(error);
+    alert(error.message);
+    return;
+  }
 
   location.reload();
 };
@@ -163,19 +157,15 @@ loginBtn.onclick = async () => {
 /* ================= LOGOUT ================= */
 
 logoutBtn.onclick = async () => {
-
   await supabase.auth.signOut();
   location.reload();
-
 };
 
 /* ================= ADMIN ================= */
 
-async function showAdmin() {
-
-  adminPanel.classList.remove("hidden");
+function showAdmin() {
   loginBox.classList.add("hidden");
-
+  adminPanel.classList.remove("hidden");
   loadColor();
   loadLogo();
 }
@@ -202,9 +192,12 @@ saveColorBtn.onclick = async () => {
       value: mainColor.value
     });
 
-  if (error) return alert(error.message);
+  if (error) {
+    alert(error.message);
+    return;
+  }
 
-  alert("Cor salva com sucesso!");
+  alert("Cor salva!");
 };
 
 /* ================= LOGO ================= */
@@ -217,27 +210,31 @@ async function loadLogo() {
     .eq("key","logo_url")
     .maybeSingle();
 
-  if (data && data.value) logoPreview.src = data.value;
+  if (data?.value) logoPreview.src = data.value;
 }
 
 saveLogoBtn.onclick = async () => {
 
   const file = logoFile.files[0];
-  if (!file) return alert("Selecione uma imagem");
+  if (!file) return alert("Selecione imagem");
 
-  const filename = `logo-${Date.now()}`;
+  const name = `logo-${Date.now()}`;
 
   const upload = await supabase.storage
     .from("assets")
-    .upload(filename, file, { upsert:true });
+    .upload(name, file, { upsert:true });
 
-  if (upload.error) return alert(upload.error.message);
+  if (upload.error) {
+    alert(upload.error.message);
+    return;
+  }
 
   const { data } = supabase.storage
     .from("assets")
-    .getPublicUrl(filename);
+    .getPublicUrl(name);
 
-  await supabase.from("site_settings")
+  await supabase
+    .from("site_settings")
     .upsert({
       key:"logo_url",
       value:data.publicUrl
@@ -246,7 +243,6 @@ saveLogoBtn.onclick = async () => {
   loadLogo();
 
   alert("Logo atualizada!");
-
 };
 
 </script>
