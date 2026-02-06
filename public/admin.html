@@ -1,251 +1,78 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<meta charset="UTF-8">
-<title>Caffeto • Admin</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="UTF-8" />
+<title>Admin - Caffeto</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 
 <style>
-
-body {
-  margin:0;
-  font-family:Arial, sans-serif;
-  background:#fafafa;
-}
-
+body { margin:0; font-family:Arial; background:#f5f5f5 }
+header { background:#2f1b0c; color:white; padding:15px; text-align:center }
+section { padding:20px }
+.card { background:white; padding:15px; border-radius:10px; margin-bottom:15px }
+input, select { width:100%; padding:8px; margin:5px 0 }
+button { background:#2f1b0c; color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer }
 .hidden { display:none }
-
-.container {
-  max-width:600px;
-  margin:40px auto;
-  background:white;
-  padding:25px;
-  border-radius:12px;
-}
-
-input,button {
-  width:100%;
-  padding:10px;
-  margin-top:10px;
-}
-
-button {
-  background:#2f1b0c;
-  color:white;
-  border:none;
-  border-radius:6px;
-}
-
-.preview {
-  max-height:120px;
-  margin-top:10px;
-}
-
+nav button { margin:5px }
+table { width:100%; border-collapse:collapse }
+td, th { border:1px solid #ccc; padding:6px }
 </style>
 </head>
 
 <body>
 
-<div class="container">
+<header>
+<h2>☕ Caffeto — Painel Administrativo</h2>
+</header>
 
-<!-- LOGIN -->
-<div id="loginBox">
-
-<h2>Login Admin</h2>
-
-<input id="email" placeholder="Email">
-<input id="password" type="password" placeholder="Senha">
-
+<section id="loginSection">
+<h3>Login Admin</h3>
+<input id="loginEmail" placeholder="Email">
+<input id="loginPassword" type="password" placeholder="Senha">
 <button id="loginBtn">Entrar</button>
+<div id="loginMsg"></div>
+</section>
+
+<section id="adminSection" class="hidden">
+
+<nav>
+<button onclick="showTab('products')">Produtos</button>
+<button onclick="showTab('settings')">Visual</button>
+<button onclick="showTab('reports')">Relatórios</button>
+<button onclick="logout()">Sair</button>
+</nav>
+
+<div id="products" class="card hidden">
+<h3>Produtos</h3>
+<input id="pname" placeholder="Nome">
+<input id="pprice" placeholder="Preço">
+<button onclick="saveProduct()">Salvar</button>
+<div id="productList"></div>
+</div>
+
+<div id="settings" class="card hidden">
+<h3>Visual do Site</h3>
+
+<label>Cor principal</label>
+<input id="colorInput" type="color">
+
+<label>Logo</label>
+<input type="file" id="logoFile">
+
+<button onclick="saveColor()">Salvar cor</button>
+<button onclick="uploadLogo()">Enviar logo</button>
 
 </div>
 
-<!-- ADMIN -->
-<div id="adminPanel" class="hidden">
-
-<h2>Painel Administrativo</h2>
-
-<h3>🎨 Cor Principal</h3>
-<input type="color" id="mainColor">
-<button id="saveColorBtn">Salvar Cor</button>
-
-<hr>
-
-<h3>🖼️ Logo</h3>
-<input type="file" id="logoFile" accept="image/*">
-<img id="logoPreview" class="preview">
-<button id="saveLogoBtn">Salvar Logo</button>
-
-<hr>
-
-<button id="logoutBtn">Sair</button>
-
+<div id="reports" class="card hidden">
+<h3>Relatórios</h3>
+<button onclick="exportCSV()">Exportar pedidos CSV</button>
+<div id="reportBox"></div>
 </div>
 
-</div>
+</section>
 
-<script type="module">
-
-import { createClient } from
-"https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-
-/* ========= CONFIG ========= */
-
-const SUPABASE_URL = "https://dzyqcvvrdfgtukkkdeql.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6eXFjdnZyZGZndHVra2tkZXFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk5MDk5MTEsImV4cCI6MjA4NTQ4NTkxMX0.l_r4NHuJIcSomBf2_sAiUgb3ah6nzRLYF-UXv4uYcRE";
-
-/* ========================= */
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-
-/* DOM */
-
-const loginBox = document.getElementById("loginBox");
-const adminPanel = document.getElementById("adminPanel");
-
-const email = document.getElementById("email");
-const password = document.getElementById("password");
-
-const loginBtn = document.getElementById("loginBtn");
-const logoutBtn = document.getElementById("logoutBtn");
-
-const mainColor = document.getElementById("mainColor");
-const saveColorBtn = document.getElementById("saveColorBtn");
-
-const logoFile = document.getElementById("logoFile");
-const logoPreview = document.getElementById("logoPreview");
-const saveLogoBtn = document.getElementById("saveLogoBtn");
-
-/* ================= INIT ================= */
-
-console.log("ADMIN SCRIPT CARREGOU");
-
-async function init() {
-
-  const { data, error } = await supabase.auth.getSession();
-
-  console.log("SESSION:", data);
-
-  if (data?.session) {
-    showAdmin();
-  } else {
-    loginBox.classList.remove("hidden");
-    adminPanel.classList.add("hidden");
-  }
-}
-
-init();
-
-/* ================= LOGIN ================= */
-
-loginBtn.onclick = async () => {
-
-  const { error } = await supabase.auth.signInWithPassword({
-    email: email.value,
-    password: password.value
-  });
-
-  if (error) {
-    console.error(error);
-    alert(error.message);
-    return;
-  }
-
-  location.reload();
-};
-
-/* ================= LOGOUT ================= */
-
-logoutBtn.onclick = async () => {
-  await supabase.auth.signOut();
-  location.reload();
-};
-
-/* ================= ADMIN ================= */
-
-function showAdmin() {
-  loginBox.classList.add("hidden");
-  adminPanel.classList.remove("hidden");
-  loadColor();
-  loadLogo();
-}
-
-/* ================= COLOR ================= */
-
-async function loadColor() {
-
-  const { data } = await supabase
-    .from("site_settings")
-    .select("*")
-    .eq("key","main_color")
-    .maybeSingle();
-
-  if (data) mainColor.value = data.value;
-}
-
-saveColorBtn.onclick = async () => {
-
-  const { error } = await supabase
-    .from("site_settings")
-    .upsert({
-      key:"main_color",
-      value: mainColor.value
-    });
-
-  if (error) {
-    alert(error.message);
-    return;
-  }
-
-  alert("Cor salva!");
-};
-
-/* ================= LOGO ================= */
-
-async function loadLogo() {
-
-  const { data } = await supabase
-    .from("site_settings")
-    .select("*")
-    .eq("key","logo_url")
-    .maybeSingle();
-
-  if (data?.value) logoPreview.src = data.value;
-}
-
-saveLogoBtn.onclick = async () => {
-
-  const file = logoFile.files[0];
-  if (!file) return alert("Selecione imagem");
-
-  const name = `logo-${Date.now()}`;
-
-  const upload = await supabase.storage
-    .from("assets")
-    .upload(name, file, { upsert:true });
-
-  if (upload.error) {
-    alert(upload.error.message);
-    return;
-  }
-
-  const { data } = supabase.storage
-    .from("assets")
-    .getPublicUrl(name);
-
-  await supabase
-    .from("site_settings")
-    .upsert({
-      key:"logo_url",
-      value:data.publicUrl
-    });
-
-  loadLogo();
-
-  alert("Logo atualizada!");
-};
-
-</script>
+<script type="module" src="admin.js"></script>
 
 </body>
 </html>
