@@ -42,6 +42,12 @@ button {
 
 input { width:100%;padding:8px;margin:5px 0 }
 
+footer {
+  text-align:center;
+  padding:20px;
+  background:#eee;
+}
+
 </style>
 </head>
 
@@ -52,10 +58,49 @@ input { width:100%;padding:8px;margin:5px 0 }
 <p>Peça direto da cafeteria</p>
 </header>
 
+<!-- ================= CADASTRO ================= -->
+
+<section>
+<h2>👤 Cadastro</h2>
+<input id="cname" placeholder="Nome completo">
+<input id="cphone" placeholder="Telefone">
+<input id="cemail" placeholder="Email">
+<input id="cbirth" type="date">
+<button id="registerBtn">Cadastrar / Entrar</button>
+<div id="customerInfo"></div>
+</section>
+
+<!-- ================= MENU ================= -->
+
 <section>
 <h2>📋 Cardápio</h2>
 <div id="menu"></div>
 </section>
+
+<!-- ================= PEDIDO ================= -->
+
+<section>
+<h2>🛒 Pedido</h2>
+<div id="cart"></div>
+<button id="whatsBtn">Enviar pelo WhatsApp</button>
+</section>
+
+<!-- ================= FIDELIDADE ================= -->
+
+<section>
+<h2>🎁 Fidelidade</h2>
+<div id="pointsBox">Cadastre-se para ver seus pontos.</div>
+<p><small>Resgate a partir de 1000 pontos</small></p>
+</section>
+
+<!-- ================= MAPA ================= -->
+
+<section>
+<h2>📍 Localização</h2>
+<button id="mapsBtn">Abrir no Google Maps</button>
+</section>
+
+<footer>© Caffeto Cafeteria</footer>
 
 <script type="module" src="site.js"></script>
 
