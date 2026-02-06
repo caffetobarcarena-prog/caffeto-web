@@ -1,56 +1,208 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<meta charset="UTF-8">
-<title>Caffeto CMS</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="UTF-8" />
+<title>Caffeto — Administração</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
 <style>
-body{font-family:Arial;background:#fafafa;padding:20px}
-section{background:white;padding:15px;border-radius:10px;margin-bottom:20px}
-input,textarea,button{padding:8px;margin:5px;width:100%}
-button{background:#6b3e1d;color:white;border:none;border-radius:6px}
-img{max-width:120px}
-h2{margin-top:0}
+body{font-family:Arial;background:#fafafa;margin:0;padding:20px}
+.hidden{display:none}
+section{background:white;padding:15px;border-radius:12px;margin-bottom:20px}
+input,textarea,button,select{padding:10px;margin:6px 0;width:100%}
+button{background:#6b3e1d;color:white;border:none;border-radius:8px}
+h1,h2{margin-top:0}
+hr{border:0;border-top:1px solid #ddd}
+img{max-width:120px;border-radius:8px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}
 </style>
 </head>
 
 <body>
 
+<!-- LOGIN -->
+<section id="loginBox">
+<h1>☕ Caffeto — Login Admin</h1>
+<input id="email" placeholder="Email">
+<input id="password" type="password" placeholder="Senha">
+<button onclick="login()">Entrar</button>
+<div id="loginMsg"></div>
+</section>
+
+<!-- CMS -->
+<div id="cms" class="hidden">
+
 <h1>☕ Caffeto — CMS</h1>
 
 <section>
 <h2>🎨 Visual do Site</h2>
-<input id="headline">
-<input id="subheadline">
+<div class="grid">
+<input id="headline" placeholder="Título">
+<input id="subheadline" placeholder="Subtítulo">
 <input id="primary_color" type="color">
-<input id="whatsapp">
-<input id="maps">
-<button onclick="saveSettings()">Salvar</button>
+<input id="whatsapp" placeholder="WhatsApp">
+<input id="maps" placeholder="Maps query">
+</div>
+<button onclick="saveSettings()">Salvar Visual</button>
 </section>
 
 <section>
 <h2>📋 Cardápio</h2>
 <div id="products"></div>
 
+<hr>
+
 <h3>Novo produto</h3>
 <input id="pname" placeholder="Nome">
-<textarea id="pdesc"></textarea>
-<input id="pprice" type="number">
+<textarea id="pdesc" placeholder="Descrição"></textarea>
+<input id="pprice" type="number" step="0.01">
 <input type="file" id="pimg">
-<button onclick="saveProduct()">Salvar</button>
+<button onclick="saveProduct()">Salvar Produto</button>
 </section>
 
 <section>
 <h2>🖼️ Logo / Banner</h2>
-<input type="file" id="assetFile">
 <select id="assetKey">
 <option value="logo">Logo</option>
 <option value="banner">Banner</option>
 </select>
-<button onclick="uploadAsset()">Upload</button>
+<input type="file" id="assetFile">
+<button onclick="uploadAsset()">Enviar imagem</button>
 </section>
 
-<script type="module" src="admin.js"></script>
+<button onclick="logout()">Sair</button>
+
+</div>
+
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const supabase = createClient(
+  "https://SEU-PROJETO.supabase.co",
+  "SUA_PUBLIC_KEY"
+);
+
+const bucket = "site";
+
+/* ---------- AUTH ---------- */
+
+async function checkSession(){
+ const {data:{session}}=await supabase.auth.getSession();
+ if(session){
+  loginBox.classList.add("hidden");
+  cms.classList.remove("hidden");
+  loadSettings();
+  loadProducts();
+ }
+}
+
+checkSession();
+
+window.login = async()=>{
+ const {error}=await supabase.auth.signInWithPassword({
+  email:email.value,
+  password:password.value
+ });
+ if(error) loginMsg.innerText=error.message;
+ else location.reload();
+};
+
+window.logout=async()=>{
+ await supabase.auth.signOut();
+ location.reload();
+};
+
+/* ---------- SETTINGS ---------- */
+
+async function loadSettings(){
+ const {data}=await supabase.from("site_settings").select("*");
+ data.forEach(s=>{
+  const el=document.getElementById(s.key);
+  if(el) el.value=s.value;
+ });
+}
+
+window.saveSettings=async()=>{
+ const keys=["headline","subheadline","primary_color","whatsapp","maps"];
+
+ for(const k of keys){
+  await supabase.from("site_settings")
+   .upsert({key:k,value:document.getElementById(k).value});
+ }
+ alert("Visual salvo!");
+};
+
+/* ---------- PRODUCTS ---------- */
+
+async function loadProducts(){
+ const {data}=await supabase.from("products").select("*");
+ products.innerHTML="";
+ data.forEach(p=>{
+  products.innerHTML+=`
+   <div>
+    <strong>${p.name}</strong> — R$ ${p.price}
+    <br>
+    <button onclick="toggle('${p.id}',${!p.available})">
+      ${p.available?"Desativar":"Ativar"}
+    </button>
+   </div>`;
+ });
+}
+
+window.toggle=async(id,val)=>{
+ await supabase.from("products")
+  .update({available:val})
+  .eq("id",id);
+ loadProducts();
+};
+
+window.saveProduct=async()=>{
+ let img=null;
+
+ if(pimg.files[0]){
+  const path=`products/${Date.now()}-${pimg.files[0].name}`;
+
+  await supabase.storage.from(bucket)
+   .upload(path,pimg.files[0]);
+
+  img=supabase.storage.from(bucket)
+   .getPublicUrl(path).data.publicUrl;
+ }
+
+ await supabase.from("products").insert({
+  name:pname.value,
+  description:pdesc.value,
+  price:pprice.value,
+  image_url:img,
+  available:true
+ });
+
+ alert("Produto criado!");
+ loadProducts();
+};
+
+/* ---------- ASSETS ---------- */
+
+window.uploadAsset=async()=>{
+
+ const file=assetFile.files[0];
+ if(!file) return;
+
+ const path=`assets/${assetKey.value}-${Date.now()}`;
+
+ await supabase.storage.from(bucket).upload(path,file);
+
+ const url=supabase.storage
+  .from(bucket)
+  .getPublicUrl(path).data.publicUrl;
+
+ await supabase.from("site_assets")
+  .upsert({key:assetKey.value,url});
+
+ alert("Imagem salva!");
+};
+
+</script>
+
 </body>
 </html>
