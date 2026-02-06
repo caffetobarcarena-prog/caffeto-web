@@ -3,52 +3,27 @@
 <head>
 <meta charset="UTF-8" />
 <title>Caffeto Cafeteria</title>
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
 <style>
+:root { --main-color:#2f1b0c }
 
-/* =============================
-   VARIÁVEIS
-============================= */
-
-:root {
-  --main-color: #2f1b0c;
-}
-
-/* =============================
-   BASE
-============================= */
-
-body {
-  margin:0;
-  font-family: Arial, sans-serif;
-  background:#fafafa;
-}
+body { margin:0;font-family:Arial;background:#fafafa }
 
 header {
   background:var(--main-color);
   color:white;
-  padding:18px;
+  padding:20px;
   text-align:center;
 }
 
-/* LOGO RESPONSIVA */
 header img {
-  height:75px;
+  height:80px;
   max-width:90%;
   object-fit:contain;
-  margin-bottom:6px;
 }
 
-/* SUBTÍTULO */
-header p {
-  margin:4px 0 0;
-  font-size:14px;
-  opacity:.9;
-}
-
-section { padding:20px; }
+section { padding:20px }
 
 .card {
   background:white;
@@ -63,37 +38,9 @@ button {
   border:none;
   padding:10px 15px;
   border-radius:6px;
-  cursor:pointer;
-  width:100%;
 }
 
-input {
-  width:100%;
-  padding:8px;
-  margin:5px 0;
-}
-
-footer {
-  text-align:center;
-  padding:20px;
-  background:#eee;
-  font-size:13px;
-}
-
-/* =============================
-   DESKTOP
-============================= */
-
-@media(min-width:768px){
-
-  header img { height:90px; }
-
-  section {
-    max-width:900px;
-    margin:auto;
-  }
-
-}
+input { width:100%;padding:8px;margin:5px 0 }
 
 </style>
 </head>
@@ -101,45 +48,14 @@ footer {
 <body>
 
 <header>
-<h1>☕ Caffeto</h1>
-<p></p>
+<img id="logo">
+<p>Peça direto da cafeteria</p>
 </header>
-
-<section>
-<h2>👤 Cadastro</h2>
-<input id="cname" placeholder="Nome completo">
-<input id="cphone" placeholder="Telefone">
-<input id="cemail" placeholder="Email">
-<input id="cbirth" type="date">
-<button id="registerBtn">Cadastrar / Entrar</button>
-<div id="customerInfo"></div>
-</section>
 
 <section>
 <h2>📋 Cardápio</h2>
 <div id="menu"></div>
 </section>
-
-<section>
-<h2>🛒 Pedido</h2>
-<div id="cart"></div>
-<button id="whatsBtn">Enviar pelo WhatsApp</button>
-</section>
-
-<section>
-<h2>🎁 Fidelidade</h2>
-<div id="pointsBox">Cadastre-se para ver seus pontos.</div>
-<p><small>Resgate a partir de 1000 pontos</small></p>
-</section>
-
-<section>
-<h2>📍 Localização</h2>
-<button id="mapsBtn">Abrir no Google Maps</button>
-</section>
-
-<footer>
-© Caffeto Cafeteria
-</footer>
 
 <script type="module" src="site.js"></script>
 
