@@ -1,111 +1,48 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-const SUPABASE_URL="https://dzyqcvvrdfgtukkkdeql.supabase.co";
-const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6eXFjdnZyZGZndHVra2tkZXFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk5MDk5MTEsImV4cCI6MjA4NTQ4NTkxMX0.l_r4NHuJIcSomBf2_sAiUgb3ah6nzRLYF-UXv4uYcRE";
+const supabase=createClient(
+ "https://dzyqcvvrdfgtukkkdeql.supabase.co",
+ "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6eXFjdnZyZGZndHVra2tkZXFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk5MDk5MTEsImV4cCI6MjA4NTQ4NTkxMX0.l_r4NHuJIcSomBf2_sAiUgb3ah6nzRLYF-UXv4uYcRE"
+);
 
-const supabase=createClient(SUPABASE_URL,SUPABASE_KEY);
+loadVisual();
+loadMenu();
 
-const WHATSAPP_PHONE="+5591993714865";
-const MAPS_QUERY="Caffeto Barcarena";
+async function loadVisual(){
 
-let cart=[];
-let currentCustomer=null;
+ const {data:set}=await supabase.from("site_settings").select("*");
+ set.forEach(s=>{
+  if(s.key==="primary_color")
+   document.documentElement.style.setProperty("--main",s.value);
+  if(s.key==="headline") document.querySelector("header p").innerText=s.value;
+ });
 
-mapsBtn.onclick=()=>window.open(`https://maps.google.com?q=${encodeURIComponent(MAPS_QUERY)}`);
-registerBtn.onclick=registerCustomer;
-whatsBtn.onclick=finalizeOrder;
+ const {data:assets}=await supabase.from("site_assets").select("*");
 
-async function registerCustomer(){
-
- const payload={
-  name:cname.value,
-  phone:cphone.value,
-  email:cemail.value,
-  birth:cbirth.value
- };
-
- const { data,error }=await supabase
-  .from("customers")
-  .upsert(payload,{onConflict:"phone"})
-  .select()
-  .single();
-
- if(error) return alert(error.message);
-
- currentCustomer=data;
- customerInfo.innerText=`Olá ${data.name}`;
- loadPoints();
- loadMenu();
-}
-
-async function loadPoints(){
- const { data }=await supabase
-  .from("customers")
-  .select("points")
-  .eq("id",currentCustomer.id)
-  .single();
-
- pointsBox.innerText=`Pontos: ${data.points}`;
+ assets.forEach(a=>{
+  if(a.key==="logo")
+   document.querySelector("h1").innerHTML=
+    `<img src="${a.url}" height="50">`;
+ });
 }
 
 async function loadMenu(){
 
- const { data,error }=await supabase
+ const {data}=await supabase
   .from("products")
   .select("*")
   .eq("available",true);
 
- if(error) return console.error(error);
-
  menu.innerHTML="";
+
  data.forEach(p=>{
   menu.innerHTML+=`
    <div class="card">
-    <strong>${p.name}</strong><br>
+    ${p.image_url?`<img src="${p.image_url}" width="100%">`:``}
+    <strong>${p.name}</strong>
+    <p>${p.description||""}</p>
     R$ ${p.price}
-    <button onclick="addToCart('${p.name}',${p.price})">Adicionar</button>
+    <button onclick="add('${p.name}',${p.price})">Adicionar</button>
    </div>`;
  });
 }
-
-window.addToCart=(n,p)=>{
- cart.push({name:n,price:p});
- renderCart();
-};
-
-function renderCart(){
- let total=cart.reduce((s,i)=>s+i.price,0);
- cartDiv.innerHTML=cart.map(i=>`${i.name} - ${i.price}`).join("<br>");
- cartDiv.innerHTML+=`<br><strong>Total: ${total}</strong>`;
-}
-
-async function finalizeOrder(){
-
- if(!currentCustomer||!cart.length)
-  return alert("Cadastre-se e adicione itens");
-
- const total=cart.reduce((s,i)=>s+i.price,0);
-
- const { data,error }=await supabase
-  .from("orders")
-  .insert({
-    customer_id:currentCustomer.id,
-    total,
-    status:"pending"
-  })
-  .select()
-  .single();
-
- if(error) return alert(error.message);
-
- let msg="Olá Caffeto! Pedido:%0A";
- cart.forEach(i=>msg+=`- ${i.name} R$ ${i.price}%0A`);
- msg+=`Total: R$ ${total}`;
-
- window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${msg}`);
-
- cart=[];
- renderCart();
-}
-
-loadMenu();
