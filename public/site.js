@@ -12,47 +12,70 @@ const supabase = createClient(
 const header = document.querySelector("header");
 const titleEl = document.querySelector("header h1");
 const subtitleEl = document.querySelector("header p");
+const menuEl = document.getElementById("menu");
+const cartEl = document.getElementById("cart");
+const pointsBox = document.getElementById("pointsBox");
+const mapsBtn = document.getElementById("mapsBtn");
+const whatsBtn = document.getElementById("whatsBtn");
 
 /* =============================
-   CARREGAR VISUAL
+   LOAD GLOBAL
 ============================= */
 
-loadVisual();
-loadMenu();
+init();
+
+async function init() {
+  await loadVisual();
+  await loadMenu();
+}
+
+/* =============================
+   VISUAL DO SITE
+============================= */
 
 async function loadVisual() {
 
   const { data: settings, error } =
     await supabase.from("site_settings").select("*");
 
-  if (error) console.error("Erro settings:", error);
+  if (error) {
+    console.error("Erro site_settings:", error);
+    return;
+  }
 
   settings.forEach(s => {
 
     if (s.key === "primary_color") {
-      document.documentElement.style
-        .setProperty("--main-color", s.value);
-
+      document.documentElement
+        .style.setProperty("--main-color", s.value);
       header.style.background = s.value;
     }
 
-    if (s.key === "headline") subtitleEl.innerText = s.value;
+    if (s.key === "headline") {
+      subtitleEl.innerText = s.value;
+    }
 
   });
 
   const { data: assets, error: assetErr } =
     await supabase.from("site_assets").select("*");
 
-  if (assetErr) console.error("Erro assets:", assetErr);
+  if (assetErr) {
+    console.error("Erro site_assets:", assetErr);
+    return;
+  }
 
   assets.forEach(a => {
 
     if (a.key === "logo") {
+
       titleEl.innerHTML =
-        `<img src="${a.url}" style="height:55px">`;
+        `<img src="${a.url}" alt="Caffeto">`;
+
     }
 
   });
+
 }
 
 /* =============================
@@ -71,11 +94,11 @@ async function loadMenu() {
     return;
   }
 
-  menu.innerHTML = "";
+  menuEl.innerHTML = "";
 
   data.forEach(p => {
 
-    menu.innerHTML += `
+    menuEl.innerHTML += `
       <div class="card">
         ${p.image_url ? `<img src="${p.image_url}" width="100%">` : ""}
         <strong>${p.name}</strong>
@@ -91,7 +114,7 @@ async function loadMenu() {
 }
 
 /* =============================
-   CARRINHO (mantido)
+   CARRINHO
 ============================= */
 
 let cart = [];
@@ -112,5 +135,35 @@ function renderCart() {
     cartEl.innerHTML += `<div>${i.name} — R$ ${i.price}</div>`;
   });
 
-  cartEl.innerHTML += `<strong>Total: R$ ${total.toFixed(2)}</strong>`;
+  cartEl.innerHTML +=
+    `<strong>Total: R$ ${total.toFixed(2)}</strong>`;
 }
+
+/* =============================
+   MAPS + WHATS
+============================= */
+
+mapsBtn.onclick = () => {
+  window.open(
+    `https://maps.google.com?q=Caffeto Barcarena`
+  );
+};
+
+whatsBtn.onclick = () => {
+
+  if (!cart.length) {
+    alert("Carrinho vazio");
+    return;
+  }
+
+  let msg = "Olá Caffeto! Pedido:%0A";
+
+  cart.forEach(i => {
+    msg += `- ${i.name} (R$ ${i.price})%0A`;
+  });
+
+  window.open(
+    `https://wa.me/5591999999999?text=${msg}`
+  );
+
+};
