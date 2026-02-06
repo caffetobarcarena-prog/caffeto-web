@@ -2,40 +2,53 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<title>Caffeto Admin</title>
+<title>Caffeto CMS</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 body{font-family:Arial;background:#fafafa;padding:20px}
 section{background:white;padding:15px;border-radius:10px;margin-bottom:20px}
-input,button{padding:8px;margin:5px}
+input,textarea,button{padding:8px;margin:5px;width:100%}
 button{background:#6b3e1d;color:white;border:none;border-radius:6px}
-.hidden{display:none}
+img{max-width:120px}
+h2{margin-top:0}
 </style>
 </head>
 
 <body>
 
-<h1>☕ Caffeto Admin</h1>
+<h1>☕ Caffeto — CMS</h1>
 
-<section id="loginBox">
-<h2>Login</h2>
-<input id="email" placeholder="Email">
-<input id="password" type="password" placeholder="Senha">
-<button onclick="login()">Entrar</button>
+<section>
+<h2>🎨 Visual do Site</h2>
+<input id="headline">
+<input id="subheadline">
+<input id="primary_color" type="color">
+<input id="whatsapp">
+<input id="maps">
+<button onclick="saveSettings()">Salvar</button>
 </section>
 
-<section id="dashboard" class="hidden">
+<section>
+<h2>📋 Cardápio</h2>
+<div id="products"></div>
 
-<h2>📊 Dashboard</h2>
-<canvas id="chart"></canvas>
+<h3>Novo produto</h3>
+<input id="pname" placeholder="Nome">
+<textarea id="pdesc"></textarea>
+<input id="pprice" type="number">
+<input type="file" id="pimg">
+<button onclick="saveProduct()">Salvar</button>
+</section>
 
-<p id="metrics"></p>
-
-<button onclick="loadReports()">Atualizar</button>
-
+<section>
+<h2>🖼️ Logo / Banner</h2>
+<input type="file" id="assetFile">
+<select id="assetKey">
+<option value="logo">Logo</option>
+<option value="banner">Banner</option>
+</select>
+<button onclick="uploadAsset()">Upload</button>
 </section>
 
 <script type="module" src="admin.js"></script>
