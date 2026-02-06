@@ -1,205 +1,195 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<meta charset="UTF-8" />
-<title>Caffeto — Administração</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="UTF-8">
+<title>Caffeto Admin</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
 
 <style>
-body{font-family:Arial;background:#fafafa;margin:0;padding:20px}
+body{margin:0;font-family:Arial;background:#f5f5f5}
 .hidden{display:none}
-section{background:white;padding:15px;border-radius:12px;margin-bottom:20px}
-input,textarea,button,select{padding:10px;margin:6px 0;width:100%}
-button{background:#6b3e1d;color:white;border:none;border-radius:8px}
-h1,h2{margin-top:0}
-hr{border:0;border-top:1px solid #ddd}
-img{max-width:120px;border-radius:8px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+.card{background:white;padding:20px;border-radius:10px;margin:20px}
+input,button{padding:10px;margin:6px 0;width:100%}
+button{background:#2f1b0c;color:white;border:none;border-radius:6px}
+header{background:#2f1b0c;color:white;padding:15px;text-align:center}
+img{max-height:120px;margin:10px 0}
 </style>
 </head>
 
 <body>
 
-<!-- LOGIN -->
-<section id="loginBox">
-<h1>☕ Caffeto — Login Admin</h1>
+<header>
+<h2>☕ Caffeto — Admin</h2>
+</header>
+
+<div id="loginBox" class="card">
+<h3>Login</h3>
 <input id="email" placeholder="Email">
 <input id="password" type="password" placeholder="Senha">
 <button onclick="login()">Entrar</button>
-<div id="loginMsg"></div>
-</section>
-
-<!-- CMS -->
-<div id="cms" class="hidden">
-
-<h1>☕ Caffeto — CMS</h1>
-
-<section>
-<h2>🎨 Visual do Site</h2>
-<div class="grid">
-<input id="headline" placeholder="Título">
-<input id="subheadline" placeholder="Subtítulo">
-<input id="primary_color" type="color">
-<input id="whatsapp" placeholder="WhatsApp">
-<input id="maps" placeholder="Maps query">
 </div>
-<button onclick="saveSettings()">Salvar Visual</button>
-</section>
 
-<section>
-<h2>📋 Cardápio</h2>
+<div id="adminPanel" class="hidden">
+
+<div class="card">
+<h3>🎨 Cores</h3>
+<input type="color" id="mainColor">
+<button onclick="saveColor()">Salvar Cor</button>
+</div>
+
+<div class="card">
+<h3>🖼 Logo</h3>
+<input type="file" id="logoFile">
+<img id="logoPreview">
+<button onclick="uploadLogo()">Salvar Logo</button>
+</div>
+
+<div class="card">
+<h3>📋 Cardápio</h3>
+<button onclick="loadProducts()">Atualizar Lista</button>
 <div id="products"></div>
+</div>
 
-<hr>
-
-<h3>Novo produto</h3>
-<input id="pname" placeholder="Nome">
-<textarea id="pdesc" placeholder="Descrição"></textarea>
-<input id="pprice" type="number" step="0.01">
-<input type="file" id="pimg">
-<button onclick="saveProduct()">Salvar Produto</button>
-</section>
-
-<section>
-<h2>🖼️ Logo / Banner</h2>
-<select id="assetKey">
-<option value="logo">Logo</option>
-<option value="banner">Banner</option>
-</select>
-<input type="file" id="assetFile">
-<button onclick="uploadAsset()">Enviar imagem</button>
-</section>
-
-<button onclick="logout()">Sair</button>
+<div class="card">
+<h3>📊 Relatórios</h3>
+<button onclick="downloadOrders()">Baixar Pedidos CSV</button>
+</div>
 
 </div>
 
 <script type="module">
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-const supabase = createClient(
-  "https://dzyqcvvrdfgtukkkdeql.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6eXFjdnZyZGZndHVra2tkZXFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk5MDk5MTEsImV4cCI6MjA4NTQ4NTkxMX0.l_r4NHuJIcSomBf2_sAiUgb3ah6nzRLYF-UXv4uYcRE"
-);
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-const bucket = "site";
+const SUPABASE_URL = 'https://dzyqcvvrdfgtukkkdeql.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6eXFjdnZyZGZndHVra2tkZXFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk5MDk5MTEsImV4cCI6MjA4NTQ4NTkxMX0.l_r4NHuJIcSomBf2_sAiUgb3ah6nzRLYF-UXv4uYcRE';
 
-/* ---------- AUTH ---------- */
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-async function checkSession(){
- const {data:{session}}=await supabase.auth.getSession();
- if(session){
-  loginBox.classList.add("hidden");
-  cms.classList.remove("hidden");
-  loadSettings();
-  loadProducts();
- }
+/* =======================
+   AUTH
+======================= */
+
+async function checkSession() {
+  const { data } = await supabase.auth.getSession();
+
+  if (data.session) {
+    loginBox.classList.add('hidden');
+    adminPanel.classList.remove('hidden');
+    loadColor();
+    loadLogo();
+    loadProducts();
+  }
 }
 
 checkSession();
 
-window.login = async()=>{
- const {error}=await supabase.auth.signInWithPassword({
-  email:email.value,
-  password:password.value
- });
- if(error) loginMsg.innerText=error.message;
- else location.reload();
+window.login = async () => {
+  const { error } = await supabase.auth.signInWithPassword({
+    email: email.value,
+    password: password.value
+  });
+
+  if (error) return alert('Login inválido');
+
+  location.reload();
 };
 
-window.logout=async()=>{
- await supabase.auth.signOut();
- location.reload();
-};
+/* =======================
+   COLORS
+======================= */
 
-/* ---------- SETTINGS ---------- */
+async function loadColor() {
+  const { data } = await supabase
+    .from('site_settings')
+    .select('value')
+    .eq('key','main_color')
+    .single();
 
-async function loadSettings(){
- const {data}=await supabase.from("site_settings").select("*");
- data.forEach(s=>{
-  const el=document.getElementById(s.key);
-  if(el) el.value=s.value;
- });
+  if (data) mainColor.value = data.value;
 }
 
-window.saveSettings=async()=>{
- const keys=["headline","subheadline","primary_color","whatsapp","maps"];
+window.saveColor = async () => {
 
- for(const k of keys){
-  await supabase.from("site_settings")
-   .upsert({key:k,value:document.getElementById(k).value});
- }
- alert("Visual salvo!");
+  await supabase.from('site_settings')
+    .upsert({ key:'main_color', value: mainColor.value });
+
+  alert('Cor salva!');
 };
 
-/* ---------- PRODUCTS ---------- */
+/* =======================
+   LOGO
+======================= */
 
-async function loadProducts(){
- const {data}=await supabase.from("products").select("*");
- products.innerHTML="";
- data.forEach(p=>{
-  products.innerHTML+=`
-   <div>
-    <strong>${p.name}</strong> — R$ ${p.price}
-    <br>
-    <button onclick="toggle('${p.id}',${!p.available})">
-      ${p.available?"Desativar":"Ativar"}
-    </button>
-   </div>`;
- });
+async function loadLogo() {
+  const { data } = await supabase
+    .from('site_settings')
+    .select('value')
+    .eq('key','logo_url')
+    .single();
+
+  if (data) logoPreview.src = data.value;
 }
 
-window.toggle=async(id,val)=>{
- await supabase.from("products")
-  .update({available:val})
-  .eq("id",id);
- loadProducts();
+window.uploadLogo = async () => {
+
+  const file = logoFile.files[0];
+  if (!file) return;
+
+  const path = `logo-${Date.now()}.png`;
+
+  await supabase.storage
+    .from('assets')
+    .upload(path, file, { upsert:true });
+
+  const { data } = supabase.storage
+    .from('assets')
+    .getPublicUrl(path);
+
+  await supabase.from('site_settings')
+    .upsert({ key:'logo_url', value: data.publicUrl });
+
+  loadLogo();
 };
 
-window.saveProduct=async()=>{
- let img=null;
+/* =======================
+   PRODUCTS
+======================= */
 
- if(pimg.files[0]){
-  const path=`products/${Date.now()}-${pimg.files[0].name}`;
+window.loadProducts = async () => {
 
-  await supabase.storage.from(bucket)
-   .upload(path,pimg.files[0]);
+  const { data } = await supabase.from('products').select('*');
 
-  img=supabase.storage.from(bucket)
-   .getPublicUrl(path).data.publicUrl;
- }
+  products.innerHTML = '';
 
- await supabase.from("products").insert({
-  name:pname.value,
-  description:pdesc.value,
-  price:pprice.value,
-  image_url:img,
-  available:true
- });
-
- alert("Produto criado!");
- loadProducts();
+  data.forEach(p => {
+    products.innerHTML += `
+      <div>
+        ${p.name} - R$${p.price}
+      </div>
+    `;
+  });
 };
 
-/* ---------- ASSETS ---------- */
+/* =======================
+   REPORTS
+======================= */
 
-window.uploadAsset=async()=>{
+window.downloadOrders = async () => {
 
- const file=assetFile.files[0];
- if(!file) return;
+  const { data } = await supabase.from('orders').select('*');
 
- const path=`assets/${assetKey.value}-${Date.now()}`;
+  let csv = 'id,total,status,created_at\n';
 
- await supabase.storage.from(bucket).upload(path,file);
+  data.forEach(o=>{
+    csv += `${o.id},${o.total},${o.status},${o.created_at}\n`;
+  });
 
- const url=supabase.storage
-  .from(bucket)
-  .getPublicUrl(path).data.publicUrl;
-
- await supabase.from("site_assets")
-  .upsert({key:assetKey.value,url});
-
- alert("Imagem salva!");
+  const blob = new Blob([csv]);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'pedidos.csv';
+  a.click();
 };
 
 </script>
