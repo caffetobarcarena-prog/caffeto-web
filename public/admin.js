@@ -1,109 +1,133 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-const supabase=createClient(
- "https://dzyqcvvrdfgtukkkdeql.supabase.co",
- "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6eXFjdnZyZGZndHVra2tkZXFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk5MDk5MTEsImV4cCI6MjA4NTQ4NTkxMX0.l_r4NHuJIcSomBf2_sAiUgb3ah6nzRLYF-UXv4uYcRE"
+/* =============================
+   CONFIG
+============================= */
+
+const SUPABASE_URL = "https://dzyqcvvrdfgtukkkdeql.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6eXFjdnZyZGZndHVra2tkZXFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk5MDk5MTEsImV4cCI6MjA4NTQ4NTkxMX0.l_r4NHuJIcSomBf2_sAiUgb3ah6nzRLYF-UXv4uYcRE";
+
+const supabase = createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
 );
 
-const bucket="site";
+/* =============================
+   ELEMENTOS
+============================= */
 
-/* -------- SETTINGS -------- */
+const loginBox = document.getElementById("loginBox");
+const panelBox = document.getElementById("panelBox");
 
-loadSettings();
+const emailInput = document.getElementById("email");
+const passInput = document.getElementById("password");
+const loginBtn = document.getElementById("loginBtn");
 
-async function loadSettings(){
- const {data}=await supabase.from("site_settings").select("*");
- data.forEach(s=>{
-  const el=document.getElementById(s.key);
-  if(el) el.value=s.value;
- });
+const bannerTextInput = document.getElementById("bannerText");
+const bannerToggle = document.getElementById("bannerActive");
+const bannerFile = document.getElementById("bannerFile");
+const bannerSaveBtn = document.getElementById("saveBanner");
+
+const bannerPreview = document.getElementById("bannerPreview");
+
+/* =============================
+   LOGIN ADMIN
+============================= */
+
+loginBtn.onclick = async () => {
+
+  const email = emailInput.value;
+  const password = passInput.value;
+
+  const { data, error } =
+    await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+  if (error) {
+    alert("Login inválido");
+    return;
+  }
+
+  loginBox.style.display = "none";
+  panelBox.style.display = "block";
+
+  loadBanner();
+};
+
+/* =============================
+   LOAD BANNER
+============================= */
+
+async function loadBanner() {
+
+  const { data } = await supabase
+    .from("site_settings")
+    .select("*")
+    .in("key", ["banner_text", "banner_active"]);
+
+  data?.forEach(s => {
+
+    if (s.key === "banner_text")
+      bannerTextInput.value = s.value;
+
+    if (s.key === "banner_active")
+      bannerToggle.checked = s.value === "true";
+
+  });
+
+  const { data: asset } = await supabase
+    .from("site_assets")
+    .select("*")
+    .eq("key", "banner")
+    .single();
+
+  if (asset?.url)
+    bannerPreview.src = asset.url;
 }
 
-window.saveSettings=async()=>{
- const items=[
-  headline.value,
-  subheadline.value,
-  primary_color.value,
-  whatsapp.value,
-  maps.value
- ];
+/* =============================
+   SAVE BANNER
+============================= */
 
- const keys=["headline","subheadline","primary_color","whatsapp","maps"];
+bannerSaveBtn.onclick = async () => {
 
- for(let i=0;i<keys.length;i++){
+  const text = bannerTextInput.value;
+  const active = bannerToggle.checked;
+
   await supabase.from("site_settings")
-   .upsert({key:keys[i],value:items[i]});
- }
- alert("Salvo!");
-};
+    .upsert([
+      { key: "banner_text", value: text },
+      { key: "banner_active", value: active.toString() }
+    ], { onConflict: "key" });
 
-/* -------- PRODUCTS -------- */
+  if (bannerFile.files[0]) {
 
-loadProducts();
+    const file = bannerFile.files[0];
 
-async function loadProducts(){
- const {data}=await supabase.from("products").select("*");
- products.innerHTML="";
- data.forEach(p=>{
-  products.innerHTML+=`
-   <div>
-    <strong>${p.name}</strong> - ${p.price}
-    <button onclick="toggle('${p.id}',${!p.available})">
-      ${p.available?"Desativar":"Ativar"}
-    </button>
-   </div>`;
- });
-}
+    const path =
+      `assets/banner-${Date.now()}.${file.name.split(".").pop()}`;
 
-window.toggle=async(id,val)=>{
- await supabase.from("products")
-  .update({available:val})
-  .eq("id",id);
- loadProducts();
-};
+    const { error } = await supabase.storage
+      .from("site")
+      .upload(path, file, { upsert: true });
 
-window.saveProduct=async()=>{
- let imgUrl=null;
+    if (!error) {
 
- if(pimg.files[0]){
-  const path=`products/${Date.now()}-${pimg.files[0].name}`;
+      const { data } = supabase.storage
+        .from("site")
+        .getPublicUrl(path);
 
-  await supabase.storage
-   .from(bucket)
-   .upload(path,pimg.files[0]);
+      await supabase.from("site_assets")
+        .upsert({
+          key: "banner",
+          url: data.publicUrl
+        }, { onConflict: "key" });
 
-  imgUrl=supabase.storage
-   .from(bucket)
-   .getPublicUrl(path).data.publicUrl;
- }
+    }
 
- await supabase.from("products").insert({
-  name:pname.value,
-  description:pdesc.value,
-  price:pprice.value,
-  image_url:imgUrl
- });
+  }
 
- alert("Produto salvo!");
- loadProducts();
-};
-
-/* -------- ASSETS -------- */
-
-window.uploadAsset=async()=>{
-
- const file=assetFile.files[0];
- if(!file) return;
-
- const path=`assets/${assetKey.value}-${Date.now()}`;
-
- await supabase.storage.from(bucket).upload(path,file);
-
- const url=supabase.storage.from(bucket)
-  .getPublicUrl(path).data.publicUrl;
-
- await supabase.from("site_assets")
-  .upsert({key:assetKey.value,url});
-
- alert("Imagem salva!");
+  alert("Banner atualizado!");
 };
