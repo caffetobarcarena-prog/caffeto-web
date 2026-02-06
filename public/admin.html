@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 
 <style>
-body{margin:0;font-family:Arial;background:#f5f5f5}
+body{margin:0;font-family:Arial;background:#f3f3f3}
 .hidden{display:none}
 .card{background:white;padding:20px;border-radius:10px;margin:20px}
 input,button{padding:10px;margin:6px 0;width:100%}
@@ -19,177 +19,142 @@ img{max-height:120px;margin:10px 0}
 <body>
 
 <header>
-<h2>☕ Caffeto — Admin</h2>
+<h2>☕ Caffeto — Administração</h2>
 </header>
 
-<div id="loginBox" class="card">
-<h3>Login</h3>
+<!-- LOGIN -->
+<div id="loginBox" class="card hidden">
+<h3>Login Administrativo</h3>
 <input id="email" placeholder="Email">
 <input id="password" type="password" placeholder="Senha">
-<button onclick="login()">Entrar</button>
+<button id="loginBtn">Entrar</button>
 </div>
 
+<!-- PAINEL -->
 <div id="adminPanel" class="hidden">
 
 <div class="card">
-<h3>🎨 Cores</h3>
+<h3>🎨 Cor Principal</h3>
 <input type="color" id="mainColor">
-<button onclick="saveColor()">Salvar Cor</button>
+<button id="saveColorBtn">Salvar</button>
 </div>
 
 <div class="card">
 <h3>🖼 Logo</h3>
 <input type="file" id="logoFile">
 <img id="logoPreview">
-<button onclick="uploadLogo()">Salvar Logo</button>
-</div>
-
-<div class="card">
-<h3>📋 Cardápio</h3>
-<button onclick="loadProducts()">Atualizar Lista</button>
-<div id="products"></div>
-</div>
-
-<div class="card">
-<h3>📊 Relatórios</h3>
-<button onclick="downloadOrders()">Baixar Pedidos CSV</button>
+<button id="saveLogoBtn">Salvar Logo</button>
 </div>
 
 </div>
 
 <script type="module">
 
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-const SUPABASE_URL = 'https://dzyqcvvrdfgtukkkdeql.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6eXFjdnZyZGZndHVra2tkZXFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk5MDk5MTEsImV4cCI6MjA4NTQ4NTkxMX0.l_r4NHuJIcSomBf2_sAiUgb3ah6nzRLYF-UXv4uYcRE';
+/* ===================== CONFIG ===================== */
+
+const SUPABASE_URL = "https://dzyqcvvrdfgtukkkdeql.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6eXFjdnZyZGZndHVra2tkZXFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk5MDk5MTEsImV4cCI6MjA4NTQ4NTkxMX0.l_r4NHuJIcSomBf2_sAiUgb3ah6nzRLYF-UXv4uYcRE";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-/* =======================
-   AUTH
-======================= */
+/* ===================== INIT ===================== */
 
-async function checkSession() {
+const loginBox = document.getElementById("loginBox");
+const adminPanel = document.getElementById("adminPanel");
+
+async function init() {
+
   const { data } = await supabase.auth.getSession();
 
   if (data.session) {
-    loginBox.classList.add('hidden');
-    adminPanel.classList.remove('hidden');
-    loadColor();
-    loadLogo();
-    loadProducts();
+    showAdmin();
+  } else {
+    loginBox.classList.remove("hidden");
   }
 }
 
-checkSession();
+init();
 
-window.login = async () => {
+/* ===================== LOGIN ===================== */
+
+document.getElementById("loginBtn").onclick = async () => {
+
   const { error } = await supabase.auth.signInWithPassword({
     email: email.value,
     password: password.value
   });
 
-  if (error) return alert('Login inválido');
+  if (error) return alert("Login inválido");
 
   location.reload();
 };
 
-/* =======================
-   COLORS
-======================= */
+/* ===================== LOAD ADMIN ===================== */
+
+async function showAdmin() {
+
+  adminPanel.classList.remove("hidden");
+  loginBox.classList.add("hidden");
+
+  await loadColor();
+  await loadLogo();
+}
+
+/* ===================== COLORS ===================== */
 
 async function loadColor() {
+
   const { data } = await supabase
-    .from('site_settings')
-    .select('value')
-    .eq('key','main_color')
+    .from("site_settings")
+    .select("value")
+    .eq("key","main_color")
     .single();
 
   if (data) mainColor.value = data.value;
 }
 
-window.saveColor = async () => {
+document.getElementById("saveColorBtn").onclick = async () => {
 
-  await supabase.from('site_settings')
-    .upsert({ key:'main_color', value: mainColor.value });
+  await supabase.from("site_settings")
+    .upsert({ key:"main_color", value: mainColor.value });
 
-  alert('Cor salva!');
+  alert("Cor salva!");
 };
 
-/* =======================
-   LOGO
-======================= */
+/* ===================== LOGO ===================== */
 
 async function loadLogo() {
+
   const { data } = await supabase
-    .from('site_settings')
-    .select('value')
-    .eq('key','logo_url')
+    .from("site_settings")
+    .select("value")
+    .eq("key","logo_url")
     .single();
 
   if (data) logoPreview.src = data.value;
 }
 
-window.uploadLogo = async () => {
+document.getElementById("saveLogoBtn").onclick = async () => {
 
   const file = logoFile.files[0];
-  if (!file) return;
+  if (!file) return alert("Selecione um arquivo");
 
-  const path = `logo-${Date.now()}.png`;
+  const path = `logo-${Date.now()}`;
 
   await supabase.storage
-    .from('assets')
+    .from("assets")
     .upload(path, file, { upsert:true });
 
   const { data } = supabase.storage
-    .from('assets')
+    .from("assets")
     .getPublicUrl(path);
 
-  await supabase.from('site_settings')
-    .upsert({ key:'logo_url', value: data.publicUrl });
+  await supabase.from("site_settings")
+    .upsert({ key:"logo_url", value: data.publicUrl });
 
   loadLogo();
-};
-
-/* =======================
-   PRODUCTS
-======================= */
-
-window.loadProducts = async () => {
-
-  const { data } = await supabase.from('products').select('*');
-
-  products.innerHTML = '';
-
-  data.forEach(p => {
-    products.innerHTML += `
-      <div>
-        ${p.name} - R$${p.price}
-      </div>
-    `;
-  });
-};
-
-/* =======================
-   REPORTS
-======================= */
-
-window.downloadOrders = async () => {
-
-  const { data } = await supabase.from('orders').select('*');
-
-  let csv = 'id,total,status,created_at\n';
-
-  data.forEach(o=>{
-    csv += `${o.id},${o.total},${o.status},${o.created_at}\n`;
-  });
-
-  const blob = new Blob([csv]);
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'pedidos.csv';
-  a.click();
 };
 
 </script>
