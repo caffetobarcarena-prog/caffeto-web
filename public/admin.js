@@ -1,91 +1,104 @@
-// =======================================
-// SUPABASE CLIENT
-// =======================================
+// ================================
+// SUPABASE CONFIG
+// ================================
 
-const supabaseUrl = "https://dzyqcvvrdfgtukkkdeql.supabase.co";
-const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6eXFjdnZyZGZndHVra2tkZXFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk5MDk5MTEsImV4cCI6MjA4NTQ4NTkxMX0.l_r4NHuJIcSomBf2_sAiUgb3ah6nzRLYF-UXv4uYcRE";
+const SUPABASE_URL = "https://dzyqcvvrdfgtukkkdeql.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6eXFjdnZyZGZndHVra2tkZXFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk5MDk5MTEsImV4cCI6MjA4NTQ4NTkxMX0.l_r4NHuJIcSomBf2_sAiUgb3ah6nzRLYF-UXv4uYcRE";
 
 const supabaseClient = window.supabase.createClient(
-  supabaseUrl,
-  supabaseAnonKey
+  SUPABASE_URL,
+  SUPABASE_KEY
 );
 
-// =======================================
-// AUTH GUARD
-// =======================================
+// ================================
+// AUTH CHECK
+// ================================
 
-(async () => {
+async function checkAuth() {
   const { data } = await supabaseClient.auth.getSession();
 
   if (!data.session) {
     window.location.href = "/admin-login.html";
   }
-})();
+}
 
-// =======================================
-// TAB NAVIGATION
-// =======================================
+checkAuth();
 
-document.querySelectorAll("nav button").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const tab = btn.dataset.tab;
+// ================================
+// TAB SYSTEM
+// ================================
 
-    document.querySelectorAll("nav button").forEach(b =>
-      b.classList.remove("active")
-    );
+function initTabs() {
+  var buttons = document.querySelectorAll("nav button");
+  var tabs = document.querySelectorAll(".tab");
 
-    document.querySelectorAll(".tab").forEach(sec =>
-      sec.classList.remove("active")
-    );
+  buttons.forEach(function (btn) {
+    btn.onclick = function () {
+      var tab = btn.dataset.tab;
 
-    btn.classList.add("active");
-    document.getElementById(tab).classList.add("active");
-  });
-});
+      buttons.forEach(function (b) {
+        b.classList.remove("active");
+      });
 
-// =======================================
-// IMAGE PREVIEW
-// =======================================
+      tabs.forEach(function (t) {
+        t.classList.remove("active");
+      });
 
-const prodImageInput = document.getElementById("prodImage");
-const previewImg = document.getElementById("imagePreview");
-
-if (prodImageInput) {
-  prodImageInput.addEventListener("change", e => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    previewImg.src = URL.createObjectURL(file);
+      btn.classList.add("active");
+      document.getElementById(tab).classList.add("active");
+    };
   });
 }
 
-// =======================================
+initTabs();
+
+// ================================
+// PRODUCT IMAGE PREVIEW
+// ================================
+
+var prodImageInput = document.getElementById("prodImage");
+var previewImg = document.getElementById("imagePreview");
+
+if (prodImageInput) {
+  prodImageInput.onchange = function (e) {
+    var file = e.target.files[0];
+    if (!file) return;
+
+    previewImg.src = URL.createObjectURL(file);
+  };
+}
+
+// ================================
 // LOAD PRODUCTS
-// =======================================
+// ================================
 
 async function loadProducts() {
-  const { data, error } = await supabaseClient
+  const result = await supabaseClient
     .from("products")
     .select("*")
     .order("id");
 
-  if (error) {
-    alert("Erro menu: " + error.message);
+  if (result.error) {
+    alert("Erro menu: " + result.error.message);
     return;
   }
 
-  const list = document.getElementById("productList");
+  var list = document.getElementById("productList");
   list.innerHTML = "";
 
-  data.forEach(p => {
-    const div = document.createElement("div");
+  result.data.forEach(function (p) {
+    var div = document.createElement("div");
     div.className = "card";
 
-    div.innerHTML = `
-      <strong>${p.name}</strong><br>
-      R$ ${p.price}<br>
-      ${p.image_url ? `<img src="${p.image_url}" class="preview">` : ""}
-    `;
+    div.innerHTML =
+      "<strong>" +
+      p.name +
+      "</strong><br>R$ " +
+      p.price +
+      "<br>" +
+      (p.image_url
+        ? '<img src="' + p.image_url + '" class="preview">'
+        : "");
 
     list.appendChild(div);
   });
@@ -93,125 +106,135 @@ async function loadProducts() {
 
 loadProducts();
 
-// =======================================
+// ================================
 // SAVE PRODUCT
-// =======================================
+// ================================
 
-document.getElementById("saveProduct")?.addEventListener("click", async () => {
-  const name = prodName.value.trim();
-  const price = prodPrice.value;
-  const file = prodImageInput.files[0];
+var saveProductBtn = document.getElementById("saveProduct");
 
-  if (!name || !price) {
-    alert("Nome e preço obrigatórios.");
-    return;
-  }
+if (saveProductBtn) {
+  saveProductBtn.onclick = async function () {
+    var name = prodName.value.trim();
+    var price = prodPrice.value;
+    var file = prodImageInput.files[0];
 
-  let imageUrl = null;
-
-  if (file) {
-    const path = `products/${Date.now()}-${file.name}`;
-
-    const { error } = await supabaseClient.storage
-      .from("product-images")
-      .upload(path, file, { upsert: true });
-
-    if (error) {
-      alert("Erro upload: " + error.message);
+    if (!name || !price) {
+      alert("Nome e preço obrigatórios.");
       return;
     }
 
-    imageUrl = supabaseClient.storage
-      .from("product-images")
-      .getPublicUrl(path).data.publicUrl;
-  }
+    var imageUrl = null;
 
-  const { error } = await supabaseClient.from("products").insert({
-    name,
-    price,
-    image_url: imageUrl,
-    active: true
-  });
+    if (file) {
+      var path = "products/" + Date.now() + "-" + file.name;
 
-  if (error) {
-    alert(error.message);
-    return;
-  }
+      var upload = await supabaseClient.storage
+        .from("product-images")
+        .upload(path, file, { upsert: true });
 
-  prodName.value = "";
-  prodPrice.value = "";
-  prodImageInput.value = "";
-  previewImg.src = "";
+      if (upload.error) {
+        alert("Erro upload: " + upload.error.message);
+        return;
+      }
 
-  loadProducts();
-});
+      imageUrl = supabaseClient.storage
+        .from("product-images")
+        .getPublicUrl(path).data.publicUrl;
+    }
 
-// =======================================
-// VISUAL SETTINGS
-// =======================================
+    var insert = await supabaseClient.from("products").insert({
+      name: name,
+      price: price,
+      image_url: imageUrl,
+      active: true
+    });
 
-document.getElementById("saveVisual")?.addEventListener("click", async () => {
-  const color = mainColor.value;
-  const file = logoFile.files[0];
-  const whatsapp = whatsappInput.value;
-
-  let logoUrl = null;
-
-  if (file) {
-    const path = `logo-${Date.now()}`;
-
-    const { error } = await supabaseClient.storage
-      .from("site-assets")
-      .upload(path, file, { upsert: true });
-
-    if (error) {
-      alert("Erro logo: " + error.message);
+    if (insert.error) {
+      alert(insert.error.message);
       return;
     }
 
-    logoUrl = supabaseClient.storage
-      .from("site-assets")
-      .getPublicUrl(path).data.publicUrl;
-  }
+    prodName.value = "";
+    prodPrice.value = "";
+    prodImageInput.value = "";
+    previewImg.src = "";
 
-  const payload = {
-    id: 1,
-    main_color: color,
-    whatsapp_number: whatsapp
+    loadProducts();
   };
+}
 
-  if (logoUrl) payload.logo_url = logoUrl;
+// ================================
+// VISUAL SETTINGS
+// ================================
 
-  const { error } = await supabaseClient
-    .from("site_settings")
-    .upsert(payload);
+var saveVisualBtn = document.getElementById("saveVisual");
 
-  if (error) alert(error.message);
-  else alert("Visual atualizado!");
-});
+if (saveVisualBtn) {
+  saveVisualBtn.onclick = async function () {
+    var color = mainColor.value;
+    var whatsapp = whatsappInput.value;
+    var file = logoFile.files[0];
 
-// =======================================
+    var logoUrl = null;
+
+    if (file) {
+      var path = "logo-" + Date.now();
+
+      var upload = await supabaseClient.storage
+        .from("site-assets")
+        .upload(path, file, { upsert: true });
+
+      if (upload.error) {
+        alert("Erro logo: " + upload.error.message);
+        return;
+      }
+
+      logoUrl = supabaseClient.storage
+        .from("site-assets")
+        .getPublicUrl(path).data.publicUrl;
+    }
+
+    var payload = {
+      id: 1,
+      main_color: color,
+      whatsapp_number: whatsapp
+    };
+
+    if (logoUrl) payload.logo_url = logoUrl;
+
+    var save = await supabaseClient.from("site_settings").upsert(payload);
+
+    if (save.error) alert(save.error.message);
+    else alert("Visual atualizado!");
+  };
+}
+
+// ================================
 // LOAD ORDERS
-// =======================================
+// ================================
 
 async function loadOrders() {
-  const { data } = await supabaseClient
+  var res = await supabaseClient
     .from("orders")
     .select("*")
     .order("id", { ascending: false });
 
-  const ordersList = document.getElementById("ordersList");
+  var ordersList = document.getElementById("ordersList");
+  if (!ordersList) return;
+
   ordersList.innerHTML = "";
 
-  data.forEach(o => {
-    const div = document.createElement("div");
+  res.data.forEach(function (o) {
+    var div = document.createElement("div");
     div.className = "card";
 
-    div.innerHTML = `
-      Pedido #${o.id}<br>
-      Total: R$ ${o.total}<br>
-      Status: ${o.status}
-    `;
+    div.innerHTML =
+      "Pedido #" +
+      o.id +
+      "<br>Total: R$ " +
+      o.total +
+      "<br>Status: " +
+      o.status;
 
     ordersList.appendChild(div);
   });
@@ -219,26 +242,23 @@ async function loadOrders() {
 
 loadOrders();
 
-// =======================================
+// ================================
 // LOAD CUSTOMERS
-// =======================================
+// ================================
 
 async function loadCustomers() {
-  const { data } = await supabaseClient
-    .from("customers")
-    .select("*");
+  var res = await supabaseClient.from("customers").select("*");
 
-  const customersList = document.getElementById("customersList");
+  var customersList = document.getElementById("customersList");
+  if (!customersList) return;
+
   customersList.innerHTML = "";
 
-  data.forEach(c => {
-    const div = document.createElement("card");
+  res.data.forEach(function (c) {
+    var div = document.createElement("div");
     div.className = "card";
 
-    div.innerHTML = `
-      ${c.name}<br>
-      ${c.phone || ""}
-    `;
+    div.innerHTML = c.name + "<br>" + (c.phone || "");
 
     customersList.appendChild(div);
   });
@@ -246,33 +266,41 @@ async function loadCustomers() {
 
 loadCustomers();
 
-// =======================================
-// DOWNLOAD REPORTS
-// =======================================
-
-document.getElementById("downloadOrders")?.onclick = async () => {
-  const { data } = await supabaseClient.from("orders").select("*");
-  downloadCSV(data, "pedidos.csv");
-};
-
-document.getElementById("downloadCustomers")?.onclick = async () => {
-  const { data } = await supabaseClient.from("customers").select("*");
-  downloadCSV(data, "clientes.csv");
-};
+// ================================
+// DOWNLOAD CSV
+// ================================
 
 function downloadCSV(rows, filename) {
   if (!rows || !rows.length) return;
 
-  const header = Object.keys(rows[0]).join(",");
-  const csv =
+  var header = Object.keys(rows[0]).join(",");
+  var csv =
     header +
     "\n" +
-    rows.map(r => Object.values(r).join(",")).join("\n");
+    rows.map(function (r) {
+      return Object.values(r).join(",");
+    }).join("\n");
 
-  const blob = new Blob([csv], { type: "text/csv" });
-  const link = document.createElement("a");
+  var blob = new Blob([csv], { type: "text/csv" });
+  var link = document.createElement("a");
 
   link.href = URL.createObjectURL(blob);
   link.download = filename;
   link.click();
+}
+
+var downloadOrdersBtn = document.getElementById("downloadOrders");
+if (downloadOrdersBtn) {
+  downloadOrdersBtn.onclick = async function () {
+    var res = await supabaseClient.from("orders").select("*");
+    downloadCSV(res.data, "pedidos.csv");
+  };
+}
+
+var downloadCustomersBtn = document.getElementById("downloadCustomers");
+if (downloadCustomersBtn) {
+  downloadCustomersBtn.onclick = async function () {
+    var res = await supabaseClient.from("customers").select("*");
+    downloadCSV(res.data, "clientes.csv");
+  };
 }
