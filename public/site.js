@@ -12,70 +12,49 @@ const logoEl = document.getElementById('logo');
 
 let cart = [];
 
-/* =============================
-   SETTINGS
-============================= */
+// ================= SETTINGS =================
 
 async function loadSettings() {
 
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from('site_settings')
     .select('*')
-    .eq('key', 'main')
+    .eq('key','main')
     .maybeSingle();
 
-  if (error || !data) {
-    console.warn('Configurações não carregadas', error);
-    return;
-  }
+  if (!data) return;
 
   if (data.main_color) {
-    document.documentElement.style.setProperty(
-      '--main-color',
-      data.main_color
-    );
+    document.documentElement.style.setProperty('--main-color', data.main_color);
+    document.body.style.background = data.main_color;
   }
 
-  if (data.logo_url) {
-    logoEl.src = data.logo_url;
-    logoEl.style.maxHeight = '70px';
-    logoEl.style.objectFit = 'contain';
-  }
+  if (data.logo_url) logoEl.src = data.logo_url;
 }
 
-/* =============================
-   MENU
-============================= */
+// ================= MENU =================
 
 async function loadMenu() {
 
-  const { data: products, error } = await supabase
+  const { data } = await supabase
     .from('products')
     .select('*')
-    .eq('active', true)
+    .eq('active',true)
     .order('name');
 
-  if (error || !products) {
-    console.error(error);
-    menuEl.innerHTML = '<p>Erro ao carregar cardápio</p>';
-    return;
-  }
+  if (!data) return;
 
   menuEl.innerHTML = '';
 
-  products.forEach(p => {
+  data.forEach(p => {
 
     const div = document.createElement('div');
-    div.className = 'card';
-
-    const imgHtml = p.image_url
-      ? `<img src="${p.image_url}" class="menu-img">`
-      : '';
+    div.className = 'menu-item';
 
     div.innerHTML = `
-      ${imgHtml}
-      <strong>${p.name}</strong><br>
-      R$ ${Number(p.price).toFixed(2)}<br><br>
+      ${p.image_url ? `<img src="${p.image_url}">` : ''}
+      <strong>${p.name}</strong>
+      <span>R$ ${Number(p.price).toFixed(2)}</span>
       <button>Adicionar</button>
     `;
 
@@ -88,54 +67,41 @@ async function loadMenu() {
   });
 }
 
-/* =============================
-   CART
-============================= */
+// ================= CART =================
 
 function renderCart() {
 
-  cartEl.innerHTML = '';
+  cartEl.innerHTML='';
+  let total=0;
 
-  let total = 0;
-
-  cart.forEach(i => {
-    total += Number(i.price);
-    cartEl.innerHTML += `<div>${i.name} — R$ ${Number(i.price).toFixed(2)}</div>`;
+  cart.forEach(i=>{
+    total+=Number(i.price);
+    cartEl.innerHTML+=`${i.name} — R$ ${i.price}<br>`;
   });
 
-  cartEl.innerHTML += `<br><strong>Total: R$ ${total.toFixed(2)}</strong>`;
+  cartEl.innerHTML+=`<b>Total: R$ ${total.toFixed(2)}</b>`;
 }
 
-/* =============================
-   WHATSAPP
-============================= */
+// ================= WHATS =================
 
-whatsBtn.onclick = () => {
+whatsBtn.onclick = ()=>{
 
-  if (!cart.length) {
-    alert('Carrinho vazio');
-    return;
-  }
+  if(!cart.length) return alert("Carrinho vazio");
 
-  let msg = 'Pedido Caffeto:%0A%0A';
-  let total = 0;
+  let msg='Pedido Caffeto:%0A';
+  let total=0;
 
-  cart.forEach(i => {
-    msg += `- ${i.name} (R$ ${Number(i.price).toFixed(2)})%0A`;
-    total += Number(i.price);
+  cart.forEach(i=>{
+    msg+=`- ${i.name} (${i.price})%0A`;
+    total+=Number(i.price);
   });
 
-  msg += `%0ATotal: R$ ${total.toFixed(2)}`;
+  msg+=`Total: R$ ${total.toFixed(2)}`;
 
-  window.open(
-    `https://wa.me/5591993714865?text=${msg}`,
-    '_blank'
-  );
+  window.open(`https://wa.me/5591993714865?text=${msg}`);
 };
 
-/* =============================
-   INIT
-============================= */
+// ================= INIT =================
 
 await loadSettings();
 await loadMenu();
