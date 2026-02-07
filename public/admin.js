@@ -1,7 +1,3 @@
-// ================================
-// SUPABASE CONFIG
-// ================================
-
 const SUPABASE_URL = "https://dzyqcvvrdfgtukkkdeql.supabase.co";
 const SUPABASE_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6eXFjdnZyZGZndHVra2tkZXFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk5MDk5MTEsImV4cCI6MjA4NTQ4NTkxMX0.l_r4NHuJIcSomBf2_sAiUgb3ah6nzRLYF-UXv4uYcRE";
@@ -11,14 +7,11 @@ const supabaseClient = window.supabase.createClient(
   SUPABASE_KEY
 );
 
-// ================================
-// ELEMENTS
-// ================================
+// ================= DOM SAFE =================
 
 const mainColor = document.getElementById("mainColor");
 const whatsappInput = document.getElementById("whatsappInput");
 const logoFile = document.getElementById("logoFile");
-
 const saveVisualBtn = document.getElementById("saveVisual");
 
 const prodName = document.getElementById("prodName");
@@ -27,21 +20,14 @@ const prodImage = document.getElementById("prodImage");
 const saveProductBtn = document.getElementById("saveProduct");
 const productList = document.getElementById("productList");
 
-// ================================
-// LOAD SETTINGS
-// ================================
+// ================= LOAD SETTINGS =================
 
 async function loadSettings() {
-  const { data, error } = await supabaseClient
+  const { data } = await supabaseClient
     .from("site_settings")
     .select("*")
     .eq("key", "main")
     .maybeSingle();
-
-  if (error) {
-    console.error("Erro settings:", error);
-    return;
-  }
 
   if (!data) return;
 
@@ -49,41 +35,30 @@ async function loadSettings() {
   if (whatsappInput) whatsappInput.value = data.whatsapp_number || "";
 }
 
-// ================================
-// SAVE SETTINGS
-// ================================
+// ================= SAVE SETTINGS =================
 
 async function saveSettings() {
-  const color = mainColor?.value || "#314134";
-  const whatsapp = whatsappInput?.value || "";
-  const file = logoFile?.files[0];
+  if (!mainColor) return;
 
-  let logoUrl = null;
+  const payload = {
+    key: "main",
+    main_color: mainColor.value,
+    whatsapp_number: whatsappInput?.value || ""
+  };
 
-  if (file) {
+  if (logoFile?.files[0]) {
     const path = "logo-" + Date.now();
 
     const upload = await supabaseClient.storage
       .from("site-assets")
-      .upload(path, file, { upsert: true });
+      .upload(path, logoFile.files[0], { upsert: true });
 
-    if (upload.error) {
-      alert("Erro logo: " + upload.error.message);
-      return;
+    if (!upload.error) {
+      payload.logo_url = supabaseClient.storage
+        .from("site-assets")
+        .getPublicUrl(path).data.publicUrl;
     }
-
-    logoUrl = supabaseClient.storage
-      .from("site-assets")
-      .getPublicUrl(path).data.publicUrl;
   }
-
-  const payload = {
-    key: "main",
-    main_color: color,
-    whatsapp_number: whatsapp
-  };
-
-  if (logoUrl) payload.logo_url = logoUrl;
 
   const { error } = await supabaseClient
     .from("site_settings")
@@ -93,18 +68,18 @@ async function saveSettings() {
   else alert("Visual atualizado!");
 }
 
-// ================================
-// LOAD PRODUCTS
-// ================================
+// ================= PRODUCTS =================
 
 async function loadProducts() {
+  if (!productList) return;
+
   const { data, error } = await supabaseClient
     .from("products")
     .select("*")
     .order("name");
 
   if (error) {
-    alert("Erro menu: " + error.message);
+    console.error(error);
     return;
   }
 
@@ -124,37 +99,30 @@ async function loadProducts() {
   });
 }
 
-// ================================
-// SAVE PRODUCT
-// ================================
+// ================= SAVE PRODUCT =================
 
 async function saveProduct() {
+  if (!prodName || !prodPrice) return;
+
   const name = prodName.value.trim();
   const price = prodPrice.value;
-  const file = prodImage.files[0];
 
-  if (!name || !price) {
-    alert("Nome e preço obrigatórios.");
-    return;
-  }
+  if (!name || !price) return alert("Nome e preço obrigatórios");
 
   let imageUrl = null;
 
-  if (file) {
-    const path = "products/" + Date.now() + "-" + file.name;
+  if (prodImage?.files[0]) {
+    const path = "products/" + Date.now() + "-" + prodImage.files[0].name;
 
     const upload = await supabaseClient.storage
       .from("product-images")
-      .upload(path, file, { upsert: true });
+      .upload(path, prodImage.files[0], { upsert: true });
 
-    if (upload.error) {
-      alert("Erro upload: " + upload.error.message);
-      return;
+    if (!upload.error) {
+      imageUrl = supabaseClient.storage
+        .from("product-images")
+        .getPublicUrl(path).data.publicUrl;
     }
-
-    imageUrl = supabaseClient.storage
-      .from("product-images")
-      .getPublicUrl(path).data.publicUrl;
   }
 
   const { error } = await supabaseClient.from("products").insert({
@@ -165,24 +133,15 @@ async function saveProduct() {
   });
 
   if (error) alert(error.message);
-  else {
-    prodName.value = "";
-    prodPrice.value = "";
-    prodImage.value = "";
-    loadProducts();
-  }
+  else loadProducts();
 }
 
-// ================================
-// EVENTS
-// ================================
+// ================= EVENTS =================
 
 if (saveVisualBtn) saveVisualBtn.onclick = saveSettings;
 if (saveProductBtn) saveProductBtn.onclick = saveProduct;
 
-// ================================
-// INIT
-// ================================
+// ================= INIT =================
 
 loadSettings();
 loadProducts();
