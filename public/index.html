@@ -10,32 +10,93 @@
   --main-color:#2f1b0c;
 }
 
-body{margin:0;font-family:Arial;background:#fafafa}
-header{background:var(--main-color);color:white;padding:20px;text-align:center}
-header img{height:70px;max-width:90%}
-section{padding:20px}
-.card{background:white;padding:15px;margin-bottom:15px;border-radius:10px}
-button{background:var(--main-color);color:white;border:none;padding:10px 15px;border-radius:6px}
-input{width:100%;padding:8px;margin:5px 0}
+/* ==========================
+   BASE
+========================== */
+
+body{
+  margin:0;
+  font-family:Arial;
+  background:#fafafa
+}
+
+header{
+  background:var(--main-color);
+  color:white;
+  padding:16px;
+  text-align:center;
+}
+
+header img{
+  height:60px;
+  max-width:80%;
+  object-fit:contain;
+}
+
+/* ==========================
+   SECTIONS
+========================== */
+
+section{
+  padding:20px
+}
+
+.card{
+  background:white;
+  padding:15px;
+  margin-bottom:15px;
+  border-radius:10px;
+}
+
+/* ==========================
+   MENU IMAGES
+========================== */
+
+#menu img{
+  width:100%;
+  max-height:160px;
+  object-fit:cover;
+  border-radius:10px;
+  margin-bottom:8px;
+}
+
+/* ==========================
+   BUTTONS
+========================== */
+
+button{
+  background:var(--main-color);
+  color:white;
+  border:none;
+  padding:10px 15px;
+  border-radius:6px;
+  cursor:pointer;
+}
+
+input{
+  width:100%;
+  padding:8px;
+  margin:5px 0
+}
 </style>
 </head>
 
 <body>
 
 <header>
-<img id="logo">
-<p>Peça direto da cafeteria</p>
+  <img id="logo" alt="Logo Caffeto">
+  <p>Peça direto da cafeteria</p>
 </header>
 
 <section>
-<h2>📋 Cardápio</h2>
-<div id="menu"></div>
+  <h2>📋 Cardápio</h2>
+  <div id="menu"></div>
 </section>
 
 <section>
-<h2>🛒 Pedido</h2>
-<div id="cart"></div>
-<button id="whatsBtn">Enviar pelo WhatsApp</button>
+  <h2>🛒 Pedido</h2>
+  <div id="cart"></div>
+  <button id="whatsBtn">Enviar pelo WhatsApp</button>
 </section>
 
 <script type="module" src="site.js"></script>
