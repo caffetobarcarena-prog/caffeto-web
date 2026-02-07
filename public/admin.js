@@ -172,7 +172,7 @@ if (saveProductBtn) {
 // ================================
 
 async function loadSettings() {
-  const { data, error } = await supabaseClient
+  const { data } = await supabaseClient
     .from("site_settings")
     .select("*")
     .eq("key", "main")
@@ -195,8 +195,8 @@ loadSettings();
 
 if (saveVisualBtn) {
   saveVisualBtn.onclick = async () => {
-    const color = mainColor?.value || null;
-    const whatsapp = whatsappInput?.value || null;
+    const color = mainColor?.value || "#2f1b0c";
+    const whatsapp = whatsappInput?.value || "";
     const file = logoFile?.files[0];
 
     let logoUrl = null;
@@ -220,6 +220,7 @@ if (saveVisualBtn) {
 
     const payload = {
       key: "main",
+      value: "settings",
       main_color: color,
       whatsapp_number: whatsapp
     };
@@ -236,7 +237,7 @@ if (saveVisualBtn) {
 }
 
 // ================================
-// DOWNLOAD CSV
+// CSV
 // ================================
 
 function downloadCSV(rows, filename) {
@@ -254,20 +255,4 @@ function downloadCSV(rows, filename) {
   link.href = URL.createObjectURL(blob);
   link.download = filename;
   link.click();
-}
-
-const downloadOrdersBtn = document.getElementById("downloadOrders");
-if (downloadOrdersBtn) {
-  downloadOrdersBtn.onclick = async () => {
-    const res = await supabaseClient.from("orders").select("*");
-    downloadCSV(res.data, "pedidos.csv");
-  };
-}
-
-const downloadCustomersBtn = document.getElementById("downloadCustomers");
-if (downloadCustomersBtn) {
-  downloadCustomersBtn.onclick = async () => {
-    const res = await supabaseClient.from("customers").select("*");
-    downloadCSV(res.data, "clientes.csv");
-  };
 }
