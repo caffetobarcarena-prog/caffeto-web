@@ -8,54 +8,93 @@ const supabase = createClient(
 const menuEl = document.getElementById('menu');
 const cartEl = document.getElementById('cart');
 const whatsBtn = document.getElementById('whatsBtn');
+const logoEl = document.getElementById('logo');
 
 let cart = [];
 
-// =============================
-// SETTINGS
-// =============================
+/* =============================
+   SETTINGS
+============================= */
 
-const { data: settings } = await supabase
-  .from('site_settings')
-  .select('*')
-  .single();
+async function loadSettings() {
+  const { data, error } = await supabase
+    .from('site_settings')
+    .select('*')
+    .single();
 
-if (settings) {
-  if (settings.main_color)
-    document.documentElement.style.setProperty('--main-color', settings.main_color);
+  if (error || !data) {
+    console.warn('Configurações não carregadas');
+    return;
+  }
 
-  if (settings.logo_url)
-    document.getElementById('logo').src = settings.logo_url;
+  if (data.main_color) {
+    document.documentElement.style.setProperty(
+      '--main-color',
+      data.main_color
+    );
+  }
+
+  if (data.logo_url) {
+    logoEl.src = data.logo_url;
+    logoEl.style.maxHeight = '70px';
+    logoEl.style.objectFit = 'contain';
+  }
 }
 
-// =============================
-// MENU
-// =============================
+/* =============================
+   MENU
+============================= */
 
-const { data: products } = await supabase
-  .from('products')
-  .select('*')
-  .eq('active', true);
+async function loadMenu() {
+  const { data: products, error } = await supabase
+    .from('products')
+    .select('*')
+    .eq('active', true)
+    .order('name');
 
-products.forEach(p => {
-  const div = document.createElement('div');
-  div.className = 'card';
+  if (error || !products) {
+    menuEl.innerHTML = '<p>Erro ao carregar cardápio</p>';
+    return;
+  }
 
-  div.innerHTML = `
-    ${p.image_url ? `<img src="${p.image_url}" style="width:100%">` : ''}
-    <strong>${p.name}</strong><br>
-    R$ ${p.price}
-    <br>
-    <button>Adicionar</button>
-  `;
+  menuEl.innerHTML = '';
 
-  div.querySelector('button').onclick = () => {
-    cart.push(p);
-    renderCart();
-  };
+  products.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'card';
 
-  menuEl.appendChild(div);
-});
+    const imgHtml = p.image_url
+      ? `<img 
+            src="${p.image_url}" 
+            style="
+              width:100%;
+              max-height:220px;
+              object-fit:cover;
+              border-radius:8px;
+              margin-bottom:8px;
+            "
+         >`
+      : '';
+
+    div.innerHTML = `
+      ${imgHtml}
+      <strong>${p.name}</strong><br>
+      R$ ${Number(p.price).toFixed(2)}<br><br>
+      <button>Adicionar</button>
+    `;
+
+    div.querySelector('button').onclick = () => {
+      cart.push(p);
+      renderCart();
+    };
+
+    menuEl.appendChild(div);
+  });
+}
+
+/* =============================
+   CART
+============================= */
 
 function renderCart() {
   cartEl.innerHTML = '';
@@ -63,17 +102,41 @@ function renderCart() {
 
   cart.forEach(i => {
     total += Number(i.price);
-    cartEl.innerHTML += `<div>${i.name} — R$ ${i.price}</div>`;
+    cartEl.innerHTML += `<div>${i.name} — R$ ${Number(i.price).toFixed(2)}</div>`;
   });
 
-  cartEl.innerHTML += `<strong>Total: R$ ${total}</strong>`;
+  cartEl.innerHTML += `<br><strong>Total: R$ ${total.toFixed(2)}</strong>`;
 }
 
+/* =============================
+   WHATSAPP
+============================= */
+
 whatsBtn.onclick = () => {
-  let msg = 'Pedido Caffeto:%0A';
-  cart.forEach(i => msg += `- ${i.name}%0A`);
+  if (!cart.length) {
+    alert('Carrinho vazio');
+    return;
+  }
+
+  let msg = 'Pedido Caffeto:%0A%0A';
+  let total = 0;
+
+  cart.forEach(i => {
+    msg += `- ${i.name} (R$ ${Number(i.price).toFixed(2)})%0A`;
+    total += Number(i.price);
+  });
+
+  msg += `%0ATotal: R$ ${total.toFixed(2)}`;
 
   window.open(
-    `https://wa.me/5591993714865?text=${msg}`
+    `https://wa.me/5591993714865?text=${msg}`,
+    '_blank'
   );
 };
+
+/* =============================
+   INIT
+============================= */
+
+await loadSettings();
+await loadMenu();
