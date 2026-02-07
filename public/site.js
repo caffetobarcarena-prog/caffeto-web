@@ -17,13 +17,15 @@ let cart = [];
 ============================= */
 
 async function loadSettings() {
+
   const { data, error } = await supabase
     .from('site_settings')
     .select('*')
-    .single();
+    .eq('key', 'main')
+    .maybeSingle();
 
   if (error || !data) {
-    console.warn('Configurações não carregadas');
+    console.warn('Configurações não carregadas', error);
     return;
   }
 
@@ -46,6 +48,7 @@ async function loadSettings() {
 ============================= */
 
 async function loadMenu() {
+
   const { data: products, error } = await supabase
     .from('products')
     .select('*')
@@ -53,6 +56,7 @@ async function loadMenu() {
     .order('name');
 
   if (error || !products) {
+    console.error(error);
     menuEl.innerHTML = '<p>Erro ao carregar cardápio</p>';
     return;
   }
@@ -60,20 +64,12 @@ async function loadMenu() {
   menuEl.innerHTML = '';
 
   products.forEach(p => {
+
     const div = document.createElement('div');
     div.className = 'card';
 
     const imgHtml = p.image_url
-      ? `<img 
-            src="${p.image_url}" 
-            style="
-              width:100%;
-              max-height:220px;
-              object-fit:cover;
-              border-radius:8px;
-              margin-bottom:8px;
-            "
-         >`
+      ? `<img src="${p.image_url}" class="menu-img">`
       : '';
 
     div.innerHTML = `
@@ -97,7 +93,9 @@ async function loadMenu() {
 ============================= */
 
 function renderCart() {
+
   cartEl.innerHTML = '';
+
   let total = 0;
 
   cart.forEach(i => {
@@ -113,6 +111,7 @@ function renderCart() {
 ============================= */
 
 whatsBtn.onclick = () => {
+
   if (!cart.length) {
     alert('Carrinho vazio');
     return;
