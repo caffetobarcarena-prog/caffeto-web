@@ -168,19 +168,17 @@ if (saveProductBtn) {
 }
 
 // ================================
-// LOAD SITE SETTINGS (SEM SINGLE)
+// LOAD SITE SETTINGS
 // ================================
 
 async function loadSettings() {
   const { data, error } = await supabaseClient
     .from("site_settings")
     .select("*")
+    .eq("key", "main")
     .limit(1);
 
-  if (error || !data || !data.length) {
-    console.warn("Site settings não carregado:", error?.message);
-    return;
-  }
+  if (!data || !data.length) return;
 
   const s = data[0];
 
@@ -221,6 +219,7 @@ if (saveVisualBtn) {
     }
 
     const payload = {
+      key: "main",
       main_color: color,
       whatsapp_number: whatsapp
     };
@@ -229,7 +228,7 @@ if (saveVisualBtn) {
 
     const save = await supabaseClient
       .from("site_settings")
-      .upsert(payload);
+      .upsert(payload, { onConflict: "key" });
 
     if (save.error) alert(save.error.message);
     else alert("Visual atualizado!");
