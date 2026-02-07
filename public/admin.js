@@ -1,6 +1,6 @@
-// =================================
+// ================================
 // SUPABASE CONFIG
-// =================================
+// ================================
 
 const SUPABASE_URL = "https://dzyqcvvrdfgtukkkdeql.supabase.co";
 const SUPABASE_KEY =
@@ -11,39 +11,23 @@ const supabaseClient = window.supabase.createClient(
   SUPABASE_KEY
 );
 
-// =================================
-// AUTH
-// =================================
+// ================================
+// AUTH CHECK
+// ================================
 
 async function checkAuth() {
   const { data } = await supabaseClient.auth.getSession();
 
   if (!data.session) {
-    location.href = "/admin-login.html";
+    window.location.href = "/admin-login.html";
   }
 }
 
 checkAuth();
 
-// =================================
-// ELEMENTS SAFE LOAD
-// =================================
-
-const prodName = document.getElementById("prodName");
-const prodPrice = document.getElementById("prodPrice");
-const prodImageInput = document.getElementById("prodImage");
-const previewImg = document.getElementById("imagePreview");
-
-const mainColor = document.getElementById("mainColor");
-const whatsappInput = document.getElementById("whatsappInput");
-const logoFile = document.getElementById("logoFile");
-
-const saveProductBtn = document.getElementById("saveProduct");
-const saveVisualBtn = document.getElementById("saveVisual");
-
-// =================================
-// TABS
-// =================================
+// ================================
+// TAB SYSTEM
+// ================================
 
 function initTabs() {
   const buttons = document.querySelectorAll("nav button");
@@ -51,37 +35,46 @@ function initTabs() {
 
   buttons.forEach(btn => {
     btn.onclick = () => {
-      const tab = btn.dataset.tab;
-
       buttons.forEach(b => b.classList.remove("active"));
       tabs.forEach(t => t.classList.remove("active"));
 
       btn.classList.add("active");
-      document.getElementById(tab).classList.add("active");
+      document.getElementById(btn.dataset.tab)?.classList.add("active");
     };
   });
 }
 
 initTabs();
 
-// =================================
+// ================================
+// DOM
+// ================================
+
+const prodName = document.getElementById("prodName");
+const prodPrice = document.getElementById("prodPrice");
+const prodImageInput = document.getElementById("prodImage");
+const previewImg = document.getElementById("imagePreview");
+const saveProductBtn = document.getElementById("saveProduct");
+
+const mainColor = document.getElementById("mainColor");
+const whatsappInput = document.getElementById("whatsappInput");
+const logoFile = document.getElementById("logoFile");
+const saveVisualBtn = document.getElementById("saveVisual");
+
+// ================================
 // IMAGE PREVIEW
-// =================================
+// ================================
 
 if (prodImageInput && previewImg) {
   prodImageInput.onchange = e => {
     const file = e.target.files[0];
-    if (!file) return;
-
-    previewImg.src = URL.createObjectURL(file);
-    previewImg.style.maxHeight = "160px";
-    previewImg.style.objectFit = "contain";
+    if (file) previewImg.src = URL.createObjectURL(file);
   };
 }
 
-// =================================
+// ================================
 // LOAD PRODUCTS
-// =================================
+// ================================
 
 async function loadProducts() {
   const { data, error } = await supabaseClient
@@ -105,10 +98,10 @@ async function loadProducts() {
 
     div.innerHTML = `
       <strong>${p.name}</strong><br>
-      R$ ${Number(p.price).toFixed(2)}<br>
+      R$ ${p.price}<br>
       ${
         p.image_url
-          ? `<img src="${p.image_url}" style="max-height:120px;object-fit:contain;margin-top:8px">`
+          ? `<img src="${p.image_url}" class="preview">`
           : ""
       }
     `;
@@ -119,17 +112,15 @@ async function loadProducts() {
 
 loadProducts();
 
-// =================================
+// ================================
 // SAVE PRODUCT
-// =================================
+// ================================
 
 if (saveProductBtn) {
   saveProductBtn.onclick = async () => {
-    if (!prodName || !prodPrice) return;
-
     const name = prodName.value.trim();
     const price = prodPrice.value;
-    const file = prodImageInput?.files[0];
+    const file = prodImageInput.files[0];
 
     if (!name || !price) {
       alert("Nome e preço obrigatórios.");
@@ -139,7 +130,7 @@ if (saveProductBtn) {
     let imageUrl = null;
 
     if (file) {
-      const path = `products/${Date.now()}-${file.name}`;
+      const path = "products/" + Date.now() + "-" + file.name;
 
       const upload = await supabaseClient.storage
         .from("product-images")
@@ -169,40 +160,40 @@ if (saveProductBtn) {
 
     prodName.value = "";
     prodPrice.value = "";
-    if (prodImageInput) prodImageInput.value = "";
-    if (previewImg) previewImg.src = "";
+    prodImageInput.value = "";
+    previewImg.src = "";
 
     loadProducts();
   };
 }
 
-// =================================
-// LOAD VISUAL SETTINGS
-// =================================
+// ================================
+// LOAD SITE SETTINGS (SEM SINGLE)
+// ================================
 
-async function loadVisualSettings() {
+async function loadSettings() {
   const { data, error } = await supabaseClient
     .from("site_settings")
     .select("*")
-    .single();
+    .limit(1);
 
-  if (error || !data) {
+  if (error || !data || !data.length) {
     console.warn("Site settings não carregado:", error?.message);
     return;
   }
 
-  if (mainColor && data.main_color)
-    mainColor.value = data.main_color;
+  const s = data[0];
 
-  if (whatsappInput && data.whatsapp_number)
-    whatsappInput.value = data.whatsapp_number;
+  if (mainColor && s.main_color) mainColor.value = s.main_color;
+  if (whatsappInput && s.whatsapp_number)
+    whatsappInput.value = s.whatsapp_number;
 }
 
-loadVisualSettings();
+loadSettings();
 
-// =================================
-// SAVE VISUAL SETTINGS
-// =================================
+// ================================
+// SAVE VISUAL
+// ================================
 
 if (saveVisualBtn) {
   saveVisualBtn.onclick = async () => {
@@ -213,7 +204,7 @@ if (saveVisualBtn) {
     let logoUrl = null;
 
     if (file) {
-      const path = `logo-${Date.now()}`;
+      const path = "logo-" + Date.now();
 
       const upload = await supabaseClient.storage
         .from("site-assets")
@@ -229,10 +220,11 @@ if (saveVisualBtn) {
         .getPublicUrl(path).data.publicUrl;
     }
 
-    const payload = { id: 1 };
+    const payload = {
+      main_color: color,
+      whatsapp_number: whatsapp
+    };
 
-    if (color) payload.main_color = color;
-    if (whatsapp) payload.whatsapp_number = whatsapp;
     if (logoUrl) payload.logo_url = logoUrl;
 
     const save = await supabaseClient
@@ -244,64 +236,9 @@ if (saveVisualBtn) {
   };
 }
 
-// =================================
-// LOAD ORDERS
-// =================================
-
-async function loadOrders() {
-  const { data } = await supabaseClient
-    .from("orders")
-    .select("*")
-    .order("id", { ascending: false });
-
-  const ordersList = document.getElementById("ordersList");
-  if (!ordersList || !data) return;
-
-  ordersList.innerHTML = "";
-
-  data.forEach(o => {
-    const div = document.createElement("div");
-    div.className = "card";
-
-    div.innerHTML = `
-      Pedido #${o.id}<br>
-      Total: R$ ${Number(o.total).toFixed(2)}<br>
-      Status: ${o.status}
-    `;
-
-    ordersList.appendChild(div);
-  });
-}
-
-loadOrders();
-
-// =================================
-// LOAD CUSTOMERS
-// =================================
-
-async function loadCustomers() {
-  const { data } = await supabaseClient
-    .from("customers")
-    .select("*");
-
-  const customersList = document.getElementById("customersList");
-  if (!customersList || !data) return;
-
-  customersList.innerHTML = "";
-
-  data.forEach(c => {
-    const div = document.createElement("div");
-    div.className = "card";
-    div.innerHTML = `${c.name}<br>${c.phone || ""}`;
-    customersList.appendChild(div);
-  });
-}
-
-loadCustomers();
-
-// =================================
-// CSV
-// =================================
+// ================================
+// DOWNLOAD CSV
+// ================================
 
 function downloadCSV(rows, filename) {
   if (!rows || !rows.length) return;
@@ -323,15 +260,15 @@ function downloadCSV(rows, filename) {
 const downloadOrdersBtn = document.getElementById("downloadOrders");
 if (downloadOrdersBtn) {
   downloadOrdersBtn.onclick = async () => {
-    const { data } = await supabaseClient.from("orders").select("*");
-    downloadCSV(data, "pedidos.csv");
+    const res = await supabaseClient.from("orders").select("*");
+    downloadCSV(res.data, "pedidos.csv");
   };
 }
 
 const downloadCustomersBtn = document.getElementById("downloadCustomers");
 if (downloadCustomersBtn) {
   downloadCustomersBtn.onclick = async () => {
-    const { data } = await supabaseClient.from("customers").select("*");
-    downloadCSV(data, "clientes.csv");
+    const res = await supabaseClient.from("customers").select("*");
+    downloadCSV(res.data, "clientes.csv");
   };
 }
