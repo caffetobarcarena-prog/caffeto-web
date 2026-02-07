@@ -26,21 +26,18 @@ async function checkAuth() {
 checkAuth();
 
 // =================================
-// ELEMENTS
+// ELEMENTS SAFE LOAD
 // =================================
 
-// PRODUCT
 const prodName = document.getElementById("prodName");
 const prodPrice = document.getElementById("prodPrice");
 const prodImageInput = document.getElementById("prodImage");
 const previewImg = document.getElementById("imagePreview");
 
-// VISUAL
 const mainColor = document.getElementById("mainColor");
 const whatsappInput = document.getElementById("whatsappInput");
 const logoFile = document.getElementById("logoFile");
 
-// BUTTONS
 const saveProductBtn = document.getElementById("saveProduct");
 const saveVisualBtn = document.getElementById("saveVisual");
 
@@ -128,9 +125,11 @@ loadProducts();
 
 if (saveProductBtn) {
   saveProductBtn.onclick = async () => {
+    if (!prodName || !prodPrice) return;
+
     const name = prodName.value.trim();
     const price = prodPrice.value;
-    const file = prodImageInput.files[0];
+    const file = prodImageInput?.files[0];
 
     if (!name || !price) {
       alert("Nome e preço obrigatórios.");
@@ -170,8 +169,8 @@ if (saveProductBtn) {
 
     prodName.value = "";
     prodPrice.value = "";
-    prodImageInput.value = "";
-    previewImg.src = "";
+    if (prodImageInput) prodImageInput.value = "";
+    if (previewImg) previewImg.src = "";
 
     loadProducts();
   };
@@ -182,15 +181,21 @@ if (saveProductBtn) {
 // =================================
 
 async function loadVisualSettings() {
-  const { data } = await supabaseClient
+  const { data, error } = await supabaseClient
     .from("site_settings")
     .select("*")
     .single();
 
-  if (!data) return;
+  if (error || !data) {
+    console.warn("Site settings não carregado:", error?.message);
+    return;
+  }
 
-  if (mainColor) mainColor.value = data.main_color || "#2f1b0c";
-  if (whatsappInput) whatsappInput.value = data.whatsapp_number || "";
+  if (mainColor && data.main_color)
+    mainColor.value = data.main_color;
+
+  if (whatsappInput && data.whatsapp_number)
+    whatsappInput.value = data.whatsapp_number;
 }
 
 loadVisualSettings();
@@ -201,9 +206,9 @@ loadVisualSettings();
 
 if (saveVisualBtn) {
   saveVisualBtn.onclick = async () => {
-    const color = mainColor.value;
-    const whatsapp = whatsappInput.value;
-    const file = logoFile.files[0];
+    const color = mainColor?.value || null;
+    const whatsapp = whatsappInput?.value || null;
+    const file = logoFile?.files[0];
 
     let logoUrl = null;
 
@@ -224,12 +229,10 @@ if (saveVisualBtn) {
         .getPublicUrl(path).data.publicUrl;
     }
 
-    const payload = {
-      id: 1,
-      main_color: color,
-      whatsapp_number: whatsapp
-    };
+    const payload = { id: 1 };
 
+    if (color) payload.main_color = color;
+    if (whatsapp) payload.whatsapp_number = whatsapp;
     if (logoUrl) payload.logo_url = logoUrl;
 
     const save = await supabaseClient
