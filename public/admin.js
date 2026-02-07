@@ -1,6 +1,6 @@
-// ================================
+// =================================
 // SUPABASE CONFIG
-// ================================
+// =================================
 
 const SUPABASE_URL = "https://dzyqcvvrdfgtukkkdeql.supabase.co";
 const SUPABASE_KEY =
@@ -11,25 +11,25 @@ const supabaseClient = window.supabase.createClient(
   SUPABASE_KEY
 );
 
-// ================================
-// AUTH CHECK
-// ================================
+// =================================
+// AUTH
+// =================================
 
 async function checkAuth() {
   const { data } = await supabaseClient.auth.getSession();
 
   if (!data.session) {
-    window.location.href = "/admin-login.html";
+    location.href = "/admin-login.html";
   }
 }
 
 checkAuth();
 
-// ================================
-// DOM ELEMENTS
-// ================================
+// =================================
+// ELEMENTS
+// =================================
 
-// PRODUCTS
+// PRODUCT
 const prodName = document.getElementById("prodName");
 const prodPrice = document.getElementById("prodPrice");
 const prodImageInput = document.getElementById("prodImage");
@@ -44,20 +44,20 @@ const logoFile = document.getElementById("logoFile");
 const saveProductBtn = document.getElementById("saveProduct");
 const saveVisualBtn = document.getElementById("saveVisual");
 
-// ================================
-// TAB SYSTEM
-// ================================
+// =================================
+// TABS
+// =================================
 
 function initTabs() {
   const buttons = document.querySelectorAll("nav button");
   const tabs = document.querySelectorAll(".tab");
 
-  buttons.forEach((btn) => {
+  buttons.forEach(btn => {
     btn.onclick = () => {
       const tab = btn.dataset.tab;
 
-      buttons.forEach((b) => b.classList.remove("active"));
-      tabs.forEach((t) => t.classList.remove("active"));
+      buttons.forEach(b => b.classList.remove("active"));
+      tabs.forEach(t => t.classList.remove("active"));
 
       btn.classList.add("active");
       document.getElementById(tab).classList.add("active");
@@ -67,31 +67,33 @@ function initTabs() {
 
 initTabs();
 
-// ================================
+// =================================
 // IMAGE PREVIEW
-// ================================
+// =================================
 
-if (prodImageInput) {
-  prodImageInput.onchange = (e) => {
+if (prodImageInput && previewImg) {
+  prodImageInput.onchange = e => {
     const file = e.target.files[0];
     if (!file) return;
 
     previewImg.src = URL.createObjectURL(file);
+    previewImg.style.maxHeight = "160px";
+    previewImg.style.objectFit = "contain";
   };
 }
 
-// ================================
+// =================================
 // LOAD PRODUCTS
-// ================================
+// =================================
 
 async function loadProducts() {
-  const result = await supabaseClient
+  const { data, error } = await supabaseClient
     .from("products")
     .select("*")
     .order("id");
 
-  if (result.error) {
-    alert("Erro menu: " + result.error.message);
+  if (error) {
+    alert("Erro menu: " + error.message);
     return;
   }
 
@@ -100,16 +102,16 @@ async function loadProducts() {
 
   list.innerHTML = "";
 
-  result.data.forEach((p) => {
+  data.forEach(p => {
     const div = document.createElement("div");
     div.className = "card";
 
     div.innerHTML = `
       <strong>${p.name}</strong><br>
-      R$ ${p.price}<br>
+      R$ ${Number(p.price).toFixed(2)}<br>
       ${
         p.image_url
-          ? `<img src="${p.image_url}" class="preview">`
+          ? `<img src="${p.image_url}" style="max-height:120px;object-fit:contain;margin-top:8px">`
           : ""
       }
     `;
@@ -120,9 +122,9 @@ async function loadProducts() {
 
 loadProducts();
 
-// ================================
+// =================================
 // SAVE PRODUCT
-// ================================
+// =================================
 
 if (saveProductBtn) {
   saveProductBtn.onclick = async () => {
@@ -138,14 +140,14 @@ if (saveProductBtn) {
     let imageUrl = null;
 
     if (file) {
-      const path = "products/" + Date.now() + "-" + file.name;
+      const path = `products/${Date.now()}-${file.name}`;
 
       const upload = await supabaseClient.storage
         .from("product-images")
         .upload(path, file, { upsert: true });
 
       if (upload.error) {
-        alert("Erro upload: " + upload.error.message);
+        alert(upload.error.message);
         return;
       }
 
@@ -175,9 +177,27 @@ if (saveProductBtn) {
   };
 }
 
-// ================================
+// =================================
+// LOAD VISUAL SETTINGS
+// =================================
+
+async function loadVisualSettings() {
+  const { data } = await supabaseClient
+    .from("site_settings")
+    .select("*")
+    .single();
+
+  if (!data) return;
+
+  if (mainColor) mainColor.value = data.main_color || "#2f1b0c";
+  if (whatsappInput) whatsappInput.value = data.whatsapp_number || "";
+}
+
+loadVisualSettings();
+
+// =================================
 // SAVE VISUAL SETTINGS
-// ================================
+// =================================
 
 if (saveVisualBtn) {
   saveVisualBtn.onclick = async () => {
@@ -188,14 +208,14 @@ if (saveVisualBtn) {
     let logoUrl = null;
 
     if (file) {
-      const path = "logo-" + Date.now();
+      const path = `logo-${Date.now()}`;
 
       const upload = await supabaseClient.storage
         .from("site-assets")
         .upload(path, file, { upsert: true });
 
       if (upload.error) {
-        alert("Erro logo: " + upload.error.message);
+        alert(upload.error.message);
         return;
       }
 
@@ -212,35 +232,37 @@ if (saveVisualBtn) {
 
     if (logoUrl) payload.logo_url = logoUrl;
 
-    const save = await supabaseClient.from("site_settings").upsert(payload);
+    const save = await supabaseClient
+      .from("site_settings")
+      .upsert(payload);
 
     if (save.error) alert(save.error.message);
     else alert("Visual atualizado!");
   };
 }
 
-// ================================
+// =================================
 // LOAD ORDERS
-// ================================
+// =================================
 
 async function loadOrders() {
-  const res = await supabaseClient
+  const { data } = await supabaseClient
     .from("orders")
     .select("*")
     .order("id", { ascending: false });
 
   const ordersList = document.getElementById("ordersList");
-  if (!ordersList) return;
+  if (!ordersList || !data) return;
 
   ordersList.innerHTML = "";
 
-  res.data.forEach((o) => {
+  data.forEach(o => {
     const div = document.createElement("div");
     div.className = "card";
 
     div.innerHTML = `
       Pedido #${o.id}<br>
-      Total: R$ ${o.total}<br>
+      Total: R$ ${Number(o.total).toFixed(2)}<br>
       Status: ${o.status}
     `;
 
@@ -250,33 +272,33 @@ async function loadOrders() {
 
 loadOrders();
 
-// ================================
+// =================================
 // LOAD CUSTOMERS
-// ================================
+// =================================
 
 async function loadCustomers() {
-  const res = await supabaseClient.from("customers").select("*");
+  const { data } = await supabaseClient
+    .from("customers")
+    .select("*");
 
   const customersList = document.getElementById("customersList");
-  if (!customersList) return;
+  if (!customersList || !data) return;
 
   customersList.innerHTML = "";
 
-  res.data.forEach((c) => {
+  data.forEach(c => {
     const div = document.createElement("div");
     div.className = "card";
-
     div.innerHTML = `${c.name}<br>${c.phone || ""}`;
-
     customersList.appendChild(div);
   });
 }
 
 loadCustomers();
 
-// ================================
-// DOWNLOAD CSV
-// ================================
+// =================================
+// CSV
+// =================================
 
 function downloadCSV(rows, filename) {
   if (!rows || !rows.length) return;
@@ -285,9 +307,7 @@ function downloadCSV(rows, filename) {
   const csv =
     header +
     "\n" +
-    rows
-      .map((r) => Object.values(r).join(","))
-      .join("\n");
+    rows.map(r => Object.values(r).join(",")).join("\n");
 
   const blob = new Blob([csv], { type: "text/csv" });
   const link = document.createElement("a");
@@ -297,22 +317,18 @@ function downloadCSV(rows, filename) {
   link.click();
 }
 
-// ================================
-// DOWNLOAD BUTTONS
-// ================================
-
 const downloadOrdersBtn = document.getElementById("downloadOrders");
 if (downloadOrdersBtn) {
   downloadOrdersBtn.onclick = async () => {
-    const res = await supabaseClient.from("orders").select("*");
-    downloadCSV(res.data, "pedidos.csv");
+    const { data } = await supabaseClient.from("orders").select("*");
+    downloadCSV(data, "pedidos.csv");
   };
 }
 
 const downloadCustomersBtn = document.getElementById("downloadCustomers");
 if (downloadCustomersBtn) {
   downloadCustomersBtn.onclick = async () => {
-    const res = await supabaseClient.from("customers").select("*");
-    downloadCSV(res.data, "clientes.csv");
+    const { data } = await supabaseClient.from("customers").select("*");
+    downloadCSV(data, "clientes.csv");
   };
 }
