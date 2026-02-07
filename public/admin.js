@@ -1,141 +1,149 @@
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+const supabaseUrl = "https://dzyqcvvrdfgtukkkdeql.supabase.co";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6eXFjdnZyZGZndHVra2tkZXFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk5MDk5MTEsImV4cCI6MjA4NTQ4NTkxMX0.l_r4NHuJIcSomBf2_sAiUgb3ah6nzRLYF-UXv4uYcRE";
 
-const SUPABASE_URL = 'https://dzyqcvvrdfgtukkkdeql.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6eXFjdnZyZGZndHVra2tkZXFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk5MDk5MTEsImV4cCI6MjA4NTQ4NTkxMX0.l_r4NHuJIcSomBf2_sAiUgb3ah6nzRLYF-UXv4uYcRE';
+const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+/* =====================
+ NAV
+===================== */
 
-// ============================
-// SESSION CHECK
-// ============================
+document.querySelectorAll("nav button").forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll("nav button").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll("section").forEach(s => s.classList.remove("active"));
 
-async function checkSession() {
-  const { data } = await supabase.auth.getSession();
+    btn.classList.add("active");
+    document.getElementById(btn.dataset.tab).classList.add("active");
+  };
+});
 
-  if (!data.session) {
-    loginBox.classList.remove('hidden');
-    adminPanel.classList.add('hidden');
-  } else {
-    loginBox.classList.add('hidden');
-    adminPanel.classList.remove('hidden');
-    loadProducts();
-  }
-}
+/* =====================
+ AUTH CHECK
+===================== */
 
-checkSession();
+supabase.auth.getSession().then(({ data }) => {
+  if (!data.session) location.href = "/admin-login.html";
+});
 
-// ============================
-// LOGIN
-// ============================
+/* =====================
+ IMAGE PREVIEW
+===================== */
 
-loginBtn.onclick = async () => {
+const prodImage = document.getElementById("prodImage");
+const imagePreview = document.getElementById("imagePreview");
 
-  const email = loginEmail.value;
-  const password = loginPassword.value;
-
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password
-  });
-
-  if (error) {
-    loginMsg.innerText = error.message;
-    return;
-  }
-
-  loginMsg.innerText = '';
-  checkSession();
+prodImage.onchange = e => {
+  const file = e.target.files[0];
+  if (file) imagePreview.src = URL.createObjectURL(file);
 };
 
-// ============================
-// LOGOUT
-// ============================
-
-logoutBtn.onclick = async () => {
-  await supabase.auth.signOut();
-  location.reload();
-};
-
-// ============================
-// PRODUCTS
-// ============================
+/* =====================
+ LOAD PRODUCTS
+===================== */
 
 async function loadProducts() {
-  const { data, error } = await supabase
-    .from('products')
-    .select('*')
-    .order('id');
+  const { data } = await supabase.from("products").select("*");
+  const list = document.getElementById("productList");
 
-  if (error) {
-    alert(error.message);
-    return;
-  }
-
-  productsList.innerHTML = '';
+  list.innerHTML = "";
 
   data.forEach(p => {
-    const div = document.createElement('div');
-    div.className = 'card';
-
+    const div = document.createElement("div");
+    div.className = "card";
     div.innerHTML = `
-      <strong>${p.name}</strong><br>
+      <b>${p.name}</b><br>
       R$ ${p.price}<br>
-      ${p.image_url ? `<img src="${p.image_url}">` : ''}
+      ${p.image_url ? `<img src="${p.image_url}" class="preview">` : ""}
     `;
-
-    productsList.appendChild(div);
+    list.appendChild(div);
   });
 }
 
-// ============================
-// SAVE PRODUCT + IMAGE
-// ============================
+loadProducts();
 
-saveProductBtn.onclick = async () => {
+/* =====================
+ SAVE PRODUCT
+===================== */
 
-  const name = pname.value;
-  const price = pprice.value;
-  const file = pimage.files[0];
+document.getElementById("saveProduct").onclick = async () => {
+  const name = prodName.value;
+  const price = prodPrice.value;
+  const file = prodImage.files[0];
 
   let imageUrl = null;
 
   if (file) {
+    const path = `products/${Date.now()}-${file.name}`;
 
-    const fileName = `${Date.now()}-${file.name}`;
+    const { error } = await supabase.storage
+      .from("product-images")
+      .upload(path, file);
 
-    const { error: uploadError } = await supabase
-      .storage
-      .from('product-images')
-      .upload(fileName, file);
+    if (error) return alert(error.message);
 
-    if (uploadError) {
-      alert(uploadError.message);
-      return;
-    }
-
-    const { data } = supabase
-      .storage
-      .from('product-images')
-      .getPublicUrl(fileName);
-
-    imageUrl = data.publicUrl;
+    imageUrl = supabase.storage
+      .from("product-images")
+      .getPublicUrl(path).data.publicUrl;
   }
 
-  const { error } = await supabase.from('products').insert({
+  await supabase.from("products").insert({
     name,
     price,
-    image_url: imageUrl,
-    active: true
+    image_url: imageUrl
   });
-
-  if (error) {
-    alert(error.message);
-    return;
-  }
-
-  pname.value = '';
-  pprice.value = '';
-  pimage.value = '';
 
   loadProducts();
 };
+
+/* =====================
+ SAVE VISUAL
+===================== */
+
+document.getElementById("saveVisual").onclick = async () => {
+  const color = mainColor.value;
+  const file = logoFile.files[0];
+
+  let logoUrl = null;
+
+  if (file) {
+    const path = `logo-${Date.now()}`;
+
+    const { error } = await supabase.storage
+      .from("site-assets")
+      .upload(path, file);
+
+    if (error) return alert(error.message);
+
+    logoUrl = supabase.storage
+      .from("site-assets")
+      .getPublicUrl(path).data.publicUrl;
+  }
+
+  await supabase.from("site_settings").upsert({
+    id: 1,
+    main_color: color,
+    logo_url: logoUrl
+  });
+};
+
+/* =====================
+ ORDERS
+===================== */
+
+async function loadOrders() {
+  const { data } = await supabase.from("orders").select("*").order("id",{ascending:false});
+  ordersList.innerHTML = JSON.stringify(data,null,2);
+}
+
+loadOrders();
+
+/* =====================
+ CUSTOMERS
+===================== */
+
+async function loadCustomers() {
+  const { data } = await supabase.from("customers").select("*");
+  customersList.innerHTML = JSON.stringify(data,null,2);
+}
+
+loadCustomers();
