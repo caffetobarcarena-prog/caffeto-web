@@ -8,86 +8,83 @@
 <style>
 :root {
   --main-color:#314134;
-  --text-color:#ffffff;
 }
 
-/* ==========================
-   BASE
-========================== */
+/* ===== BASE ===== */
 
-body{
+body {
   margin:0;
   font-family:Arial;
-  background:#314134;
-  color:var(--text-color);
+  background:#fafafa;
 }
 
-header{
-  background:#314134;
+header {
+  background:var(--main-color);
   color:white;
-  padding:16px;
+  padding:14px;
   text-align:center;
 }
 
-header img{
-  height:70px;
-  max-width:85%;
+header img {
+  height:60px;
+  max-width:220px;
   object-fit:contain;
+  margin-bottom:6px;
 }
 
-/* ==========================
-   SECTIONS
-========================== */
+/* ===== GRID MENU ===== */
 
-section{
-  padding:20px;
+#menu {
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+  gap:14px;
 }
 
-.card{
-  background:#ffffff;
-  color:#222;
-  padding:15px;
-  margin-bottom:15px;
+.card {
+  background:white;
+  padding:10px;
   border-radius:12px;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
 }
 
-/* ==========================
-   MENU IMAGES
-========================== */
-
-#menu img{
+.card img {
   width:100%;
-  max-height:180px;
+  height:140px;
   object-fit:cover;
-  border-radius:12px;
-  margin-bottom:8px;
+  border-radius:10px;
 }
 
-/* ==========================
-   BUTTONS
-========================== */
+/* ===== CART ===== */
 
-button{
+#cart div {
+  font-size:14px;
+  margin-bottom:4px;
+}
+
+/* ===== BUTTONS ===== */
+
+button {
   background:white;
   color:#314134;
-  border:none;
-  padding:10px 15px;
+  border:2px solid white;
+  padding:10px;
   border-radius:8px;
-  font-weight:600;
+  font-weight:bold;
   cursor:pointer;
 }
 
-button:hover{
-  opacity:.9;
+section {
+  padding:20px;
 }
-
 </style>
 </head>
 
 <body>
 
 <header>
-  <img id="logo" alt="Logo Caffeto">
+  <img id="logo">
   <p>Peça direto da cafeteria</p>
 </header>
 
