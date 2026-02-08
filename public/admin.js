@@ -1,147 +1,139 @@
 const SUPABASE_URL = "https://dzyqcvvrdfgtukkkdeql.supabase.co";
 const SUPABASE_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6eXFjdnZyZGZndHVra2tkZXFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk5MDk5MTEsImV4cCI6MjA4NTQ4NTkxMX0.l_r4NHuJIcSomBf2_sAiUgb3ah6nzRLYF-UXv4uYcRE";
+"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6eXFjdnZyZGZndHVra2tkZXFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk5MDk5MTEsImV4cCI6MjA4NTQ4NTkxMX0.l_r4NHuJIcSomBf2_sAiUgb3ah6nzRLYF-UXv4uYcRE";
 
-const supabaseClient = window.supabase.createClient(
+const supabase = window.supabase.createClient(
   SUPABASE_URL,
   SUPABASE_KEY
 );
 
-// ================= DOM SAFE =================
+// ================= DOM =================
 
-const mainColor = document.getElementById("mainColor");
-const whatsappInput = document.getElementById("whatsappInput");
-const logoFile = document.getElementById("logoFile");
-const saveVisualBtn = document.getElementById("saveVisual");
+const mainColor=document.getElementById("mainColor");
+const whatsappInput=document.getElementById("whatsappInput");
+const logoFile=document.getElementById("logoFile");
+const saveVisualBtn=document.getElementById("saveVisual");
 
-const prodName = document.getElementById("prodName");
-const prodPrice = document.getElementById("prodPrice");
-const prodImage = document.getElementById("prodImage");
-const saveProductBtn = document.getElementById("saveProduct");
-const productList = document.getElementById("productList");
+const prodName=document.getElementById("prodName");
+const prodPrice=document.getElementById("prodPrice");
+const prodImage=document.getElementById("prodImage");
+const saveProductBtn=document.getElementById("saveProduct");
+const productList=document.getElementById("productList");
 
-// ================= LOAD SETTINGS =================
+// ================= SETTINGS =================
 
-async function loadSettings() {
-  const { data } = await supabaseClient
+async function loadSettings(){
+
+  const { data } = await supabase
     .from("site_settings")
     .select("*")
-    .eq("key", "main")
+    .eq("key","main")
     .maybeSingle();
 
-  if (!data) return;
+  if(!data) return;
 
-  if (mainColor) mainColor.value = data.main_color || "#314134";
-  if (whatsappInput) whatsappInput.value = data.whatsapp_number || "";
+  mainColor.value=data.main_color;
+  whatsappInput.value=data.whatsapp_number||"";
+
+  document.documentElement.style.setProperty("--main",data.main_color);
 }
 
-// ================= SAVE SETTINGS =================
+async function saveSettings(){
 
-async function saveSettings() {
-  if (!mainColor) return;
-
-  const payload = {
-    key: "main",
-    main_color: mainColor.value,
-    whatsapp_number: whatsappInput?.value || ""
+  const payload={
+    key:"main",
+    main_color:mainColor.value,
+    whatsapp_number:whatsappInput.value
   };
 
-  if (logoFile?.files[0]) {
-    const path = "logo-" + Date.now();
+  if(logoFile.files[0]){
 
-    const upload = await supabaseClient.storage
+    const path="logo-"+Date.now();
+
+    const upload=await supabase.storage
       .from("site-assets")
-      .upload(path, logoFile.files[0], { upsert: true });
+      .upload(path,logoFile.files[0],{upsert:true});
 
-    if (!upload.error) {
-      payload.logo_url = supabaseClient.storage
-        .from("site-assets")
-        .getPublicUrl(path).data.publicUrl;
-    }
+    if(upload.error) return alert(upload.error.message);
+
+    payload.logo_url=
+      supabase.storage.from("site-assets")
+      .getPublicUrl(path).data.publicUrl;
   }
 
-  const { error } = await supabaseClient
+  const { error } = await supabase
     .from("site_settings")
-    .upsert(payload, { onConflict: "key" });
+    .upsert(payload,{onConflict:"key"});
 
-  if (error) alert(error.message);
+  if(error) alert(error.message);
   else alert("Visual atualizado!");
 }
 
 // ================= PRODUCTS =================
 
-async function loadProducts() {
-  if (!productList) return;
+async function loadProducts(){
 
-  const { data, error } = await supabaseClient
+  const { data } = await supabase
     .from("products")
     .select("*")
     .order("name");
 
-  if (error) {
-    console.error(error);
-    return;
-  }
+  productList.innerHTML="";
 
-  productList.innerHTML = "";
+  data.forEach(p=>{
+    const div=document.createElement("div");
+    div.className="menu-item";
 
-  data.forEach(p => {
-    const div = document.createElement("div");
-    div.className = "menu-item";
-
-    div.innerHTML = `
-      ${p.image_url ? `<img src="${p.image_url}" class="thumb">` : ""}
-      <strong>${p.name}</strong><br>
-      R$ ${Number(p.price).toFixed(2)}
+    div.innerHTML=`
+      ${p.image_url?`<img src="${p.image_url}">`:``}
+      <b>${p.name}</b>
+      <span>R$ ${p.price}</span>
     `;
 
     productList.appendChild(div);
   });
 }
 
-// ================= SAVE PRODUCT =================
+async function saveProduct(){
 
-async function saveProduct() {
-  if (!prodName || !prodPrice) return;
+  if(!prodName.value||!prodPrice.value)
+    return alert("Preencha tudo");
 
-  const name = prodName.value.trim();
-  const price = prodPrice.value;
+  let imageUrl=null;
 
-  if (!name || !price) return alert("Nome e preço obrigatórios");
+  if(prodImage.files[0]){
 
-  let imageUrl = null;
+    const path="products/"+Date.now()+"-"+prodImage.files[0].name;
 
-  if (prodImage?.files[0]) {
-    const path = "products/" + Date.now() + "-" + prodImage.files[0].name;
-
-    const upload = await supabaseClient.storage
+    const upload=await supabase.storage
       .from("product-images")
-      .upload(path, prodImage.files[0], { upsert: true });
+      .upload(path,prodImage.files[0],{upsert:true});
 
-    if (!upload.error) {
-      imageUrl = supabaseClient.storage
-        .from("product-images")
-        .getPublicUrl(path).data.publicUrl;
-    }
+    if(upload.error) return alert(upload.error.message);
+
+    imageUrl=supabase.storage
+      .from("product-images")
+      .getPublicUrl(path).data.publicUrl;
   }
 
-  const { error } = await supabaseClient.from("products").insert({
-    name,
-    price,
-    image_url: imageUrl,
-    active: true
+  await supabase.from("products").insert({
+    name:prodName.value,
+    price:prodPrice.value,
+    image_url:imageUrl,
+    active:true
   });
 
-  if (error) alert(error.message);
-  else loadProducts();
+  prodName.value="";
+  prodPrice.value="";
+  prodImage.value="";
+
+  loadProducts();
 }
 
-// ================= EVENTS =================
-
-if (saveVisualBtn) saveVisualBtn.onclick = saveSettings;
-if (saveProductBtn) saveProductBtn.onclick = saveProduct;
-
 // ================= INIT =================
+
+saveVisualBtn.onclick=saveSettings;
+saveProductBtn.onclick=saveProduct;
 
 loadSettings();
 loadProducts();
