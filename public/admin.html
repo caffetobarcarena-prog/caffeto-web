@@ -8,72 +8,78 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-body {
+:root{
+  --main:#314134;
+}
+
+body{
   margin:0;
   font-family:Arial;
   background:#f5f5f5;
 }
 
-header {
-  background:#2f1b0c;
+header{
+  background:var(--main);
   color:white;
-  padding:16px;
+  padding:14px;
+  text-align:center;
+}
+
+nav{
   display:flex;
-  justify-content:space-between;
-  align-items:center;
+  background:#fff;
+  border-bottom:1px solid #ddd;
 }
 
-nav button {
-  margin-right:6px;
-  background:white;
-  color:#2f1b0c;
+nav button{
+  flex:1;
   border:none;
-  padding:8px 14px;
-  border-radius:6px;
+  padding:14px;
+  background:#eee;
   cursor:pointer;
+  font-weight:bold;
 }
 
-nav button.active {
-  background:#ffddb8;
+nav button.active{
+  background:var(--main);
+  color:white;
 }
 
-section {
+section.tab{
   display:none;
   padding:20px;
 }
 
-section.active {
+section.tab.active{
   display:block;
 }
 
-.card {
-  background:white;
-  padding:16px;
-  border-radius:10px;
-  margin-bottom:16px;
+/* ====== GRID ====== */
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+  gap:12px;
 }
 
-input, select {
+.menu-item img{
+  width:100%;
+  height:120px;
+  object-fit:cover;
+  border-radius:8px;
+}
+
+input,button{
   width:100%;
   padding:8px;
-  margin:6px 0;
+  margin:5px 0;
 }
 
-img.preview {
-  max-width:200px;
-  max-height:160px;
-  object-fit:contain;
-  border-radius:8px;
-  margin-top:10px;
-}
-
-button.primary {
-  background:#2f1b0c;
+button{
+  background:var(--main);
   color:white;
   border:none;
-  padding:10px 18px;
   border-radius:6px;
-  cursor:pointer;
 }
 </style>
 </head>
@@ -82,56 +88,64 @@ button.primary {
 
 <header>
 <h2>☕ Caffeto Admin</h2>
-<nav>
-  <button data-tab="menu" class="active">Cardápio</button>
-  <button data-tab="settings">Visual</button>
-  <button data-tab="orders">Pedidos</button>
-  <button data-tab="customers">Clientes</button>
-</nav>
 </header>
 
-<!-- CARDÁPIO -->
-<section id="menu" class="active">
-  <h3>📋 Produtos</h3>
+<nav>
+  <button class="active" data-tab="tab-products">Cardápio</button>
+  <button data-tab="tab-visual">Visual</button>
+</nav>
 
-  <div class="card">
-    <input id="prodName" placeholder="Nome">
-    <input id="prodPrice" type="number" step="0.01" placeholder="Preço">
-    <input id="prodImage" type="file">
-    <button class="primary" id="saveProduct">Salvar produto</button>
-    <img id="imagePreview" class="preview">
-  </div>
+<!-- ===== PRODUTOS ===== -->
 
-  <div id="productList"></div>
+<section id="tab-products" class="tab active">
+
+<h3>Adicionar Produto</h3>
+
+<input id="prodName" placeholder="Nome">
+<input id="prodPrice" placeholder="Preço">
+<input type="file" id="prodImage">
+
+<button id="saveProduct">Salvar Produto</button>
+
+<hr>
+
+<div id="productList" class="grid"></div>
+
 </section>
 
-<!-- VISUAL -->
-<section id="settings">
-  <h3>🎨 Visual</h3>
+<!-- ===== VISUAL ===== -->
 
-  <div class="card">
-    <label>Cor principal</label>
-    <input type="color" id="mainColor">
+<section id="tab-visual" class="tab">
 
-    <label>Logo</label>
-    <input type="file" id="logoFile">
+<h3>Identidade Visual</h3>
 
-    <button class="primary" id="saveVisual">Salvar alterações</button>
-  </div>
-</section>
+<label>Cor principal</label>
+<input type="color" id="mainColor">
 
-<!-- PEDIDOS -->
-<section id="orders">
-  <h3>🧾 Pedidos</h3>
-  <div id="ordersList"></div>
-</section>
+<label>WhatsApp</label>
+<input id="whatsappInput">
 
-<!-- CLIENTES -->
-<section id="customers">
-  <h3>👤 Clientes</h3>
-  <div id="customersList"></div>
+<label>Logo</label>
+<input type="file" id="logoFile">
+
+<button id="saveVisual">Salvar Visual</button>
+
 </section>
 
 <script src="admin.js"></script>
+
+<script>
+/* TAB SYSTEM */
+document.querySelectorAll("nav button").forEach(btn=>{
+  btn.onclick=()=>{
+    document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));
+    document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+
+    btn.classList.add("active");
+    document.getElementById(btn.dataset.tab).classList.add("active");
+  };
+});
+</script>
+
 </body>
 </html>
