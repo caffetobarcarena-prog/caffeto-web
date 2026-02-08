@@ -10,11 +10,12 @@ const cartEl = document.getElementById("cart");
 const whatsBtn = document.getElementById("whatsBtn");
 const logoEl = document.getElementById("logo");
 
-let cart=[];
+let cart = [];
 
 // ================= SETTINGS =================
 
-async function loadSettings(){
+async function loadSettings() {
+
   const { data } = await supabase
     .from("site_settings")
     .select("*")
@@ -24,28 +25,28 @@ async function loadSettings(){
   if(!data) return;
 
   document.documentElement.style.setProperty("--main-color",data.main_color);
-  if(data.logo_url) logoEl.src=data.logo_url;
+
+  if(data.logo_url){
+    logoEl.src = data.logo_url;
+  }
 }
 
 // ================= MENU =================
 
-async function loadMenu(){
+async function loadMenu() {
 
   const { data } = await supabase
     .from("products")
     .select("*")
-    .eq("active",true);
-
-  if(!data){
-    menuEl.innerHTML="Erro carregando menu";
-    return;
-  }
+    .eq("active",true)
+    .order("name");
 
   menuEl.innerHTML="";
 
   data.forEach(p=>{
+
     const div=document.createElement("div");
-    div.className="menu-item";
+    div.className="card";
 
     div.innerHTML=`
       ${p.image_url?`<img src="${p.image_url}">`:``}
@@ -66,12 +67,13 @@ async function loadMenu(){
 // ================= CART =================
 
 function renderCart(){
+
   cartEl.innerHTML="";
   let total=0;
 
   cart.forEach(i=>{
     total+=Number(i.price);
-    cartEl.innerHTML+=`${i.name} — ${i.price}<br>`;
+    cartEl.innerHTML+=`<div>${i.name} — R$ ${i.price}</div>`;
   });
 
   cartEl.innerHTML+=`<b>Total: R$ ${total.toFixed(2)}</b>`;
@@ -80,12 +82,22 @@ function renderCart(){
 // ================= WHATS =================
 
 whatsBtn.onclick=()=>{
-  if(!cart.length) return alert("Carrinho vazio");
 
-  let msg="Pedido Caffeto:%0A";
-  cart.forEach(i=>msg+=`- ${i.name}%0A`);
+  if(!cart.length){
+    alert("Carrinho vazio");
+    return;
+  }
 
-  window.open(`https://wa.me/5591993714865?text=${msg}`);
+  let msg="Pedido Caffeto:%0A%0A";
+
+  cart.forEach(i=>{
+    msg+=`- ${i.name}%0A`;
+  });
+
+  window.open(
+    `https://wa.me/5591993714865?text=${msg}`,
+    "_blank"
+  );
 };
 
 // ================= INIT =================
